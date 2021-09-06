@@ -19,30 +19,37 @@
                 text:'Username'
             
             TextInput:
+                id: username
                 text:'enter desired username'
         
             Label:
                 text:'Email'
             
             TextInput:
+                id: 'email'
                 text: 'enter email address'
         
             Label:
                 text: 'Password'
             
             TextInput:
-                text: "enter desired password"
+                id: password
+                password: True
+                text: "password"
             
             Label:
                 text: 'Password (confirmation)'
             
             TextInput:
-                text: 'enter password again'
+                id: confirmation
+                password: True
+                text: 'password'
         
             Label:
                 text: 'Phone number'
             
             TextInput:
+                id: phone_number
                 text: 'phone number'
 
         
@@ -54,12 +61,11 @@
             on_press:
                 root.register(app.db)
 
-
-<MenuScreen>:
+<LoginScreen>:
     BoxLayout:
         orientation: 'vertical'
         Label:
-            text: 'Registration'
+            text: 'Login'
             font_size: self.width / 20
             background_color: (.4, .5, 100, .3)
             canvas.before:
@@ -68,3 +74,64 @@
                 Rectangle:
                     size: self.size
                     pos: self.pos
+        GridLayout:
+            cols: 2
+
+            Label:
+                text:'Username'
+            
+            TextInput:
+                id: username
+        
+            Label:
+                text: 'Password'
+            
+            TextInput:
+                id: password
+                password: True        
+
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Login"
+            on_press:
+                root.login(app.db, app)
+        
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Forgot Password"
+                on_press:
+                    root.reset_password(app.db)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "New User"
+                on_press:
+                    root.register_new_user(app.db)
+
+
+
+
+
+
+
+<MenuScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Menu'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            text: "current user"
+            on_press:
+                root.user_is(app)

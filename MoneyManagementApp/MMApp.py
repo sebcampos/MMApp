@@ -4,6 +4,7 @@ import os
 import sqlite3 
 import pandas
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.textinput import TextInput
 from kivy.app import App
 
 kivy.require('2.0.0')
@@ -17,8 +18,19 @@ class User():
         self.email = email
         self.password = password
         self.phone_number = phone_number
-    def add_user(self, db):
-        pass
+        self.registered = None
+    def add_to_database(self, db):
+        users_table = pandas.read_sql("SELECT * FROM User_Table", con=db.conn)
+        if self.username not in users_table.username.tolist():
+            pandas.DataFrame({
+                "username": [self.username], 
+                "user_email": [self.email], 
+                "user_password": [self.password], #hash this 
+                "phone_number": [self.phone_number]
+            }).to_sql("User_Table", if_exists="append",index=False, con=db.conn)
+            return True
+        else:
+            return "username already exists"
 
 
 
@@ -87,10 +99,27 @@ class DB():
 #Registration Screen
 class RegistrationScreen(Screen):
     def register(self, db):
-        status = "not registered"
-        print(self.children[0].children)
+        registered = False
+        labels = []
+        inputs = []
+        for i in self.children[0].children[1].children:
+            if isinstance(i , TextInput):
+                inputs.append(i.text)
+            else:
+                labels.append(i.text)
+        user_data = {i:v for i,v in zip(labels, inputs)}
+        if user_data["Password (confirmation)"] != user_data["Password"]:
+            return "passwords do not match"
+        user = User(
+            user_data["Username"].rstrip(),
+            user_data["Email"].rstrip(),
+            user_data["Password"].rstrip(),
+            user_data["Phone number"].rstrip()
+        )
         
-        if status == "registered":
+        registered = user.add_to_database(db)
+        
+        if registered == True:
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
             self.manager.current = "MenuScreen"
@@ -99,11 +128,35 @@ class RegistrationScreen(Screen):
 
 #Login Screen
 class LoginScreen(Screen):
-    pass
+    def login(self, db, app):
+        labels = []
+        inputs = []
+        for i in self.children[0].children[2].children:
+            if isinstance(i , TextInput):
+                inputs.append(i.text)
+            else:
+                labels.append(i.text)
+        user_data = {i:v for i,v in zip(labels, inputs)}
+        users_table = pandas.read_sql("SELECT * FROM User_Table", con=db.conn)
+        if len(users_table.loc[(users_table.username == user_data["Username"]) & (users_table.user_password == user_data["Password"])]) > 0:
+            self.manager.transition.direction = "left"
+            self.manager.transition.duration = 1
+            self.manager.current = "MenuScreen"
+            app.user = user_data["Username"] 
+        
+    def reset_password(self, db):
+        pass
+    def register_new_user(self, db):
+        self.manager.add_widget(RegistrationScreen(name="RegistrationScreen"))
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "RegistrationScreen"
 
 #Menu
 class MenuScreen(Screen):
-    pass
+    def user_is(self, app):
+        print(app.user)
+
 
 #Calender
 
