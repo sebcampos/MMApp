@@ -1,0 +1,70 @@
+<RegistrationScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Registration'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        
+        GridLayout:
+            cols: 2
+
+            Label:
+                text:'Username'
+            
+            TextInput:
+                text:'enter desired username'
+        
+            Label:
+                text:'Email'
+            
+            TextInput:
+                text: 'enter email address'
+        
+            Label:
+                text: 'Password'
+            
+            TextInput:
+                text: "enter desired password"
+            
+            Label:
+                text: 'Password (confirmation)'
+            
+            TextInput:
+                text: 'enter password again'
+        
+            Label:
+                text: 'Phone number'
+            
+            TextInput:
+                text: 'phone number'
+
+        
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Submit"
+            on_press:
+                root.register(app.db)
+
+
+<MenuScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Registration'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
