@@ -59,7 +59,7 @@
             pos_hint: {'x':.25 , 'y': .5}
             text: "Submit"
             on_press:
-                root.register(app.db)
+                root.register(app.db, app)
 
 <LoginScreen>:
     BoxLayout:
@@ -131,7 +131,33 @@
                     size: self.size
                     pos: self.pos
         BubbleButton:
+            text: 'Transactions'
+            background_color: (.4, .5, 100, .3)
+
+        BubbleButton:
+            text: 'Schedule'
+            background_color: (.4, .5, 100, .3)
+
+        BubbleButton:
+            text: 'Budgets'
+            background_color: (.4, .5, 100, .3)
+
+        BubbleButton:
+            text: 'Wallets'
+            background_color: (.4, .5, 100, .3)
+
+        BubbleButton:
+            text: 'Goals'
+            background_color: (.4, .5, 100, .3)
+        
+        BubbleButton:
             background_color: (4, 0, 100, 5)
-            text: "current user"
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Logout"
             on_press:
-                root.user_is(app)
+                root.log_out(app)
+
+
+
+

@@ -33,7 +33,6 @@ class User():
             return "username already exists"
 
 
-
 #SQLite3
 class DB():
     def __init__(self):
@@ -98,7 +97,7 @@ class DB():
 
 #Registration Screen
 class RegistrationScreen(Screen):
-    def register(self, db):
+    def register(self, db, app):
         registered = False
         labels = []
         inputs = []
@@ -120,9 +119,10 @@ class RegistrationScreen(Screen):
         registered = user.add_to_database(db)
         
         if registered == True:
+            self.manager.add_widget(LoginScreen(name="LoginScreen"))
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
-            self.manager.current = "MenuScreen"
+            self.manager.current = "LoginScreen"
         
 
 
@@ -154,8 +154,13 @@ class LoginScreen(Screen):
 
 #Menu
 class MenuScreen(Screen):
-    def user_is(self, app):
-        print(app.user)
+    def log_out(self, app):
+        app.user = False
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "LoginScreen"
+
+
 
 
 #Calender
