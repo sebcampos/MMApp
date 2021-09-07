@@ -4,6 +4,10 @@ import os
 import sqlite3 
 import pandas
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.app import App
 
@@ -161,9 +165,63 @@ class MenuScreen(Screen):
         self.manager.current = "LoginScreen"
 
 
+#Transactions
+class TransactionsScreen(Screen):
+    def load_transactions(self, app):
+        transactions = pandas.read_sql("SELECT * from Transactions", con = app.db.conn)
+        self.children[0].add_widget(BoxLayout(orientation='horizontal'))
+        for i in transactions.columns:
+            self.children[0].children[0].add_widget(Label(text=i))
+        self.children[0].add_widget(GridLayout(cols=len(transactions.columns)))
+        for i in transactions.values:
+            self.children[0].children[0].add_widget(Label(text=i))
+        self.children[0].add_widget(BoxLayout(orientation='horizontal'))
+        buttons = self.children[0].children[0]
+        add_t = Button(text="Add Transaction")
+        add_t.bind(on_press=self.add_transactions)
+        buttons.add_widget(add_t)
+        return_mm = Button(text="Return To Menu")
+        return_mm.bind(on_press=self.return_to_menu)
+        buttons.add_widget(return_mm)
+    def add_transactions(self, button):
+        self.manager.add_widget(SubTransactionScreen(name="SubtransactionScreen"))
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "SubtransactionsScreen"
+    
+    
+    def return_to_menu(self, button):
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "MenuScreen"
+    
 
+#NewTransactionScreen
+class SubTransactionScreen(Screen):
+    def update_table():
+        pass
+
+#Schedule
+class ScheduleScreen(Screen):
+    pass
+
+
+#Budgets
+class BudgetScreen(Screen):
+    pass
+
+
+#Wallets
+class WalletsScreen(Screen):
+    pass
+
+
+#Goals
+class GoalsScreen(Screen):
+    pass
 
 #Calender
+
 
 
 #Calculations
@@ -186,6 +244,7 @@ class MMApp(App):
             sm.add_widget(LoginScreen(name="LoginScreen"))
         
         sm.add_widget(MenuScreen(name="MenuScreen"))
+        sm.add_widget(TransactionsScreen(name="TransactionsScreen"))
         return sm
 
 

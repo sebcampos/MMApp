@@ -133,22 +133,43 @@
         BubbleButton:
             text: 'Transactions'
             background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "TransactionsScreen"
+                
 
         BubbleButton:
             text: 'Schedule'
             background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "ScheduleScreen"
 
         BubbleButton:
             text: 'Budgets'
             background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "BudgetsScreen"
 
         BubbleButton:
             text: 'Wallets'
             background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "WalletsScreen"
 
         BubbleButton:
             text: 'Goals'
             background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "GoalsScreen"
         
         BubbleButton:
             background_color: (4, 0, 100, 5)
@@ -159,5 +180,13 @@
                 root.log_out(app)
 
 
-
+<TransactionsScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Transactions'
+            on_parent:
+                root.load_transactions(app)
+        
+<SubTransactionScreen>
 
