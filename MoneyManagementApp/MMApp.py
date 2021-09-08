@@ -3,6 +3,7 @@ import kivy
 import os
 import sqlite3 
 import pandas
+import datetime
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -183,11 +184,12 @@ class TransactionsScreen(Screen):
         return_mm = Button(text="Return To Menu")
         return_mm.bind(on_press=self.return_to_menu)
         buttons.add_widget(return_mm)
+    
     def add_transactions(self, button):
-        self.manager.add_widget(SubTransactionScreen(name="SubtransactionScreen"))
+        self.manager.add_widget(SubTransactionScreen(name="SubTransactionScreen"))
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
-        self.manager.current = "SubtransactionsScreen"
+        self.manager.current = "SubTransactionScreen"
     
     
     def return_to_menu(self, button):
@@ -198,12 +200,24 @@ class TransactionsScreen(Screen):
 
 #NewTransactionScreen
 class SubTransactionScreen(Screen):
-    def update_table():
-        pass
+    def today_timestamp(self):
+        return f"{datetime.datetime.now()}"
+
+    def update_table(self, app_db):
+        print(self)
+    
+    def previous_screen(self):
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "TransactionsScreen"
+
+    
+
 
 #Schedule
 class ScheduleScreen(Screen):
     pass
+
 
 
 #Budgets
