@@ -9,8 +9,11 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.core.window import Window
 from kivy.app import App
+
 
 kivy.require('2.0.0')
 #Config files located on iOS = <HOME_DIRECTORY>/Documents/.kivy/config.ini
@@ -173,9 +176,13 @@ class TransactionsScreen(Screen):
         self.children[0].add_widget(BoxLayout(orientation='horizontal'))
         for i in transactions.columns:
             self.children[0].children[0].add_widget(Label(text=i))
-        self.children[0].add_widget(GridLayout(cols=len(transactions.columns)))
-        for i in transactions.values:
-            self.children[0].children[0].add_widget(Label(text=i))
+        sv = ScrollView()
+        gl = GridLayout(cols=len(transactions.columns), size_hint_y=None)
+        for row in transactions.values:
+            for i in row:
+                gl.add_widget(Label(text=str(i)))
+        sv.add_widget(gl)
+        self.children[0].add_widget(sv)
         self.children[0].add_widget(BoxLayout(orientation='horizontal'))
         buttons = self.children[0].children[0]
         add_t = Button(text="Add Transaction")
@@ -184,9 +191,15 @@ class TransactionsScreen(Screen):
         return_mm = Button(text="Return To Menu")
         return_mm.bind(on_press=self.return_to_menu)
         buttons.add_widget(return_mm)
-    
+        
+
+    def refresh_screen(self, app):
+        for widget in self.children[0].children[0:3]:
+            self.children[0].remove_widget(widget)
+        self.load_transactions(app)
+
     def add_transactions(self, button):
-        self.manager.add_widget(SubTransactionScreen(name="SubTransactionScreen"))
+        #self.manager.add_widget(SubTransactionScreen(name="SubTransactionScreen"))
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "SubTransactionScreen"
@@ -201,11 +214,27 @@ class TransactionsScreen(Screen):
 #NewTransactionScreen
 class SubTransactionScreen(Screen):
     def today_timestamp(self):
-        return f"{datetime.datetime.now()}"
+        return f"{datetime.datetime.now().date()}"
 
-    def update_table(self, app_db):
-        print(self)
-    
+    #add api call to update table
+    def update_table(self, app):
+        labels = []
+        textinputs = []
+        for widget in self.children[0].children[1].children:
+            if isinstance(widget, TextInput):
+                textinputs.append(widget.text)
+            else:
+                labels.append(widget.text)
+        data = {i:v for i,v in list(zip(labels, textinputs))}
+        pandas.DataFrame({
+            "transaction_date": [data["Date"]],
+            "amount": [data["Amount"]],
+            "location": [data["Location"]],
+            "transaction_type": [data["Transaction Type"]],
+            "transaction_tag": [data["Tag"]],
+            "wallet_id": [data["Wallet Name"]]
+        }).to_sql("Transactions", if_exists="append", con=app.db.conn, index=False)
+        self.parent.screens[2].refresh_screen(app)
     def previous_screen(self):
         self.manager.transition.direction = "right"
         self.manager.transition.duration = 1
@@ -259,6 +288,7 @@ class MMApp(App):
         
         sm.add_widget(MenuScreen(name="MenuScreen"))
         sm.add_widget(TransactionsScreen(name="TransactionsScreen"))
+        sm.add_widget(SubTransactionScreen(name="SubTransactionScreen"))
         return sm
 
 
