@@ -19,7 +19,6 @@
                 text:'Username'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: username
                 text:'enter desired username'
@@ -28,7 +27,6 @@
                 text:'Email'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: 'email'
                 text: 'enter email address'
@@ -37,7 +35,6 @@
                 text: 'Password'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: password
                 password: True
@@ -47,7 +44,6 @@
                 text: 'Password (confirmation)'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: confirmation
                 password: True
@@ -57,7 +53,6 @@
                 text: 'Phone number'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: phone_number
                 text: 'phone number'
@@ -91,7 +86,6 @@
                 text:'Username'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: username
         
@@ -99,7 +93,6 @@
                 text: 'Password'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 id: password
                 password: True        
@@ -213,14 +206,12 @@
                 text: 'Location'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
 
             Label:
                 text: 'Date'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 text: self.parent.parent.parent.today_timestamp()
             
@@ -228,14 +219,12 @@
                 text: 'Amount'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
 
             Label:
                 text: 'Transaction Type'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
 	            multiline: False
                 text: 'Deposit or Withdrawl'
             
@@ -243,7 +232,6 @@
                 text: 'Tag'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
                 text: 'No Tag'
                 multiline: False
             
@@ -251,7 +239,6 @@
                 text: 'Wallet Name'
             
             TextInput:
-	            on_touch_down: #:set self.text ''
                 text: 'No Wallet'
                 multiline: False
         BoxLayout:
@@ -268,7 +255,21 @@
                     root.update_table(app)
 
 
+<ScheduleScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Schedule'
+            on_parent:
+                root.load_schedule(app)
             
+
+
+<DayScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        on_parent:
+            root.set_app(app)
 
             
 

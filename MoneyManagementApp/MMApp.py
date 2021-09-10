@@ -11,7 +11,8 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
-from kivy.core.window import Window
+from kivy.uix.popup import Popup
+# from kivy.core.window import Window
 from kivy.app import App
 
 
@@ -38,6 +39,10 @@ class User():
             }).to_sql("User_Table", if_exists="append",index=False, con=db.conn)
             return True
         else:
+            cb = Button(text="User Already Exists in Database\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
             return "username already exists"
 
 
@@ -116,6 +121,11 @@ class RegistrationScreen(Screen):
                 labels.append(i.text)
         user_data = {i:v for i,v in zip(labels, inputs)}
         if user_data["Password (confirmation)"] != user_data["Password"]:
+            cb = Button(text="Passwords Do not Match\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+
             return "passwords do not match"
         user = User(
             user_data["Username"].rstrip(),
@@ -132,7 +142,6 @@ class RegistrationScreen(Screen):
             self.manager.transition.duration = 1
             self.manager.current = "LoginScreen"
         
-
 
 #Login Screen
 class LoginScreen(Screen):
@@ -173,14 +182,26 @@ class MenuScreen(Screen):
 class TransactionsScreen(Screen):
     def load_transactions(self, app):
         transactions = pandas.read_sql("SELECT * from Transactions", con = app.db.conn)
+        transactions.transaction_id = transactions.index
+        transactions["datetime"] = transactions.transaction_date.apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d'))
+        transactions.sort_values("datetime", ascending=False, inplace=True)
+        transactions.drop("datetime", axis=1, inplace=True)
+        self.transactions = transactions
         self.children[0].add_widget(BoxLayout(orientation='horizontal'))
         for i in transactions.columns:
             self.children[0].children[0].add_widget(Label(text=i))
         sv = ScrollView()
-        gl = GridLayout(cols=len(transactions.columns), size_hint_y=None)
+        sv.bar_inactive_color = (1, 1, 1, 1)
+        sv.scroll_type = ["bars"]
+        sv.bar_color = (1,1,1,1)
+        sv.bar_width = 10
+        gl = GridLayout(cols=len(transactions.columns), size_hint_y=len(transactions))
         for row in transactions.values:
             for i in row:
-                gl.add_widget(Label(text=str(i)))
+                l = Label(text=str(i), size_hint_y=.5)
+                l.text_size = l.size
+                l.valign = "top"                                
+                gl.add_widget(l)
         sv.add_widget(gl)
         self.children[0].add_widget(sv)
         self.children[0].add_widget(BoxLayout(orientation='horizontal'))
@@ -218,6 +239,7 @@ class SubTransactionScreen(Screen):
 
     #add api call to update table
     def update_table(self, app):
+        print(self.parent)
         labels = []
         textinputs = []
         for widget in self.children[0].children[1].children:
@@ -226,7 +248,34 @@ class SubTransactionScreen(Screen):
             else:
                 labels.append(widget.text)
         data = {i:v for i,v in list(zip(labels, textinputs))}
+        try:
+            datetime.datetime.strptime(data["Date"], '%Y-%m-%d')
+        except:
+            cb = Button(text="Incorrect Date format, YYYY-M-D\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+        
+        if data["Transaction Type"].lower() not in ["withdrawl", "deposit"]:
+            cb = Button(text="Incorrect Transaction Type (Deposit or Withdrawl)\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+
+        try:
+            float(data["Amount"])
+        except:
+            cb = Button(text="Incorrect Amount, amount must be integer or float\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return   
+
+        new_id = max(self.parent.screens[2].transactions.index) + 1
         pandas.DataFrame({
+            "transaction_id": [new_id],
             "transaction_date": [data["Date"]],
             "amount": [data["Amount"]],
             "location": [data["Location"]],
@@ -235,18 +284,86 @@ class SubTransactionScreen(Screen):
             "wallet_id": [data["Wallet Name"]]
         }).to_sql("Transactions", if_exists="append", con=app.db.conn, index=False)
         self.parent.screens[2].refresh_screen(app)
+        ##updated endpoint here##
+
+        cb = Button(text="Transaction Added\n\n\n\n   Close")
+        pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
+        cb.bind(on_press=pu.dismiss)
+        pu.open()
+
     def previous_screen(self):
         self.manager.transition.direction = "right"
         self.manager.transition.duration = 1
         self.manager.current = "TransactionsScreen"
 
     
-
-
 #Schedule
 class ScheduleScreen(Screen):
-    pass
+    def load_schedule(self, app):
+        schedule = pandas.read_sql("SELECT * from Scheduled", con = app.db.conn)
+        self.today = datetime.datetime.now().day
+        now = datetime.datetime.now()
+        days_in_month = (datetime.date(now.year, now.month + 1, 1) - datetime.date(now.year, now.month, 1)).days
+        #self.children[0].add_widget(Label(text=str(now.month)))
+        gl = GridLayout(cols=5)
+        for num in range(1,days_in_month+1):
+            if self.today == num:
+                gl.add_widget(Button(text=f"{num} TODAY", on_press=self.edit_day))
+            else:
+                gl.add_widget(Button(text=f"{num}", on_press=self.edit_day))
 
+        self.children[0].add_widget(gl)
+        self.children[0].add_widget(Button(text="Return To Menu", on_press=self.previous_screen))
+    
+    def refresh_screen(self):
+        for widget in self.children[0].children[0:2]:
+            self.children[0].remove_widget(widget)
+
+
+    
+    def edit_day(self, button):
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "DayScreen"
+        self.manager.children[0].load(button.text)
+    
+    def previous_screen(self, button):
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "MenuScreen"
+    
+
+class DayScreen(Screen):
+    def set_app(self, app):
+        self.app = app
+    def load(self, text):
+        self.children[0].add_widget(Label(text=text))
+        gl = GridLayout(cols=2)
+        gl.add_widget(Label(text="Transaction ID"))
+        gl.add_widget(TextInput())
+        gl.add_widget(Label(text='Frequency'))
+        gl.add_widget(TextInput())
+        self.children[0].add_widget(gl)
+        data = {i:v for i,v in list(zip([x.text for x in gl.children if isinstance(x, Label)],[x.text for x in gl.children if isinstance(x, TextInput)]))}
+        print(data)
+        bl = BoxLayout(orientation="horizontal")
+        previous_screen = Button(text="Back", on_press=self.previous_screen)
+        submit = Button(text="Add to Schedule", on_press=self.submit)
+        bl.add_widget(previous_screen)
+        bl.add_widget(submit)
+        self.children[0].add_widget(bl)
+    def refresh_screen(self):
+        self.children[0].clear_widgets()
+    def previous_screen(self, button):
+        app = self.app
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "ScheduleScreen"
+        self.parent.children[0].refresh_screen()
+        self.refresh_screen()
+        self.parent.children[0].load_schedule(app)
+    def submit(self, button):
+        pass
 
 
 #Budgets
@@ -289,6 +406,8 @@ class MMApp(App):
         sm.add_widget(MenuScreen(name="MenuScreen"))
         sm.add_widget(TransactionsScreen(name="TransactionsScreen"))
         sm.add_widget(SubTransactionScreen(name="SubTransactionScreen"))
+        sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
+        sm.add_widget(DayScreen(name="DayScreen"))
         return sm
 
 
