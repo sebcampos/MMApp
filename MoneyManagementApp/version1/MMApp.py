@@ -239,7 +239,6 @@ class SubTransactionScreen(Screen):
 
     #add api call to update table
     def update_table(self, app):
-        print(self.parent)
         labels = []
         textinputs = []
         for widget in self.children[0].children[1].children:
@@ -299,12 +298,78 @@ class SubTransactionScreen(Screen):
     
 #Schedule
 class ScheduleScreen(Screen):
+    def set_month(self, node, operation):
+        node = node.parent.children[1]
+        data = [num for num,month in  self.calender.items() if month == node.text][0]
+        if operation == 1:
+            if int(data) == 12:
+                node.text = self.calender["1"]
+                data = 1
+            else:
+                node.text = self.calender[str(int(data) + 1)]
+                data = int(data) + 1
+        if operation == 0:
+            if int(data) == 1: 
+                node.text = self.calender["12"]
+                data = 12
+            else:
+                node.text = self.calender[str(int(data) - 1)]
+                data = int(data) - 1
+        self.refresh_screen()
+        l = Label(text=str(self.calender[str(data)]))
+        if data == 1:
+            days_in_month = (datetime.date(self.now.year, 2, 1) - datetime.date(self.now.year, 1, 1)).days
+        elif data == 12:
+            days_in_month = (datetime.date(self.now.year, 12, 1) - datetime.date(self.now.year, 11, 1)).days
+        else:
+            days_in_month = (datetime.date(self.now.year, data + 1, 1) - datetime.date(self.now.year, data, 1)).days
+        btb = Button(text="<", on_press= lambda x: self.set_month(x, 0))
+        btn = Button(text=">", on_press= lambda x: self.set_month(x, 1))
+        bl = BoxLayout(orientation="horizontal")
+        bl.add_widget(btb)
+        bl.add_widget(l)
+        bl.add_widget(btn)
+        self.children[0].add_widget(bl)
+        gl = GridLayout(cols=5)
+        for num in range(1,days_in_month+1):
+            if self.today == num and data == self.month:
+                gl.add_widget(Button(text=f"{num} TODAY", on_press=self.edit_day))
+            else:
+                gl.add_widget(Button(text=f"{num}", on_press=self.edit_day))
+
+        self.children[0].add_widget(gl)
+        self.children[0].add_widget(Button(text="Return To Menu", on_press=self.previous_screen))
+        
+
+    
     def load_schedule(self, app):
-        schedule = pandas.read_sql("SELECT * from Scheduled", con = app.db.conn)
+        self.schedule = pandas.read_sql("SELECT * from Scheduled", con = app.db.conn)
         self.today = datetime.datetime.now().day
-        now = datetime.datetime.now()
-        days_in_month = (datetime.date(now.year, now.month + 1, 1) - datetime.date(now.year, now.month, 1)).days
-        #self.children[0].add_widget(Label(text=str(now.month)))
+        self.now = datetime.datetime.now()
+        self.month = self.now.month
+        self.calender= {
+            "1": "Jan",
+            "2": "Feb",
+            "3": "Mar",
+            "4": "Apr",
+            "5": "May",
+            "6": "Jun",
+            "7": "Jul",
+            "8": "Aug",
+            "9": "Sep",
+            "10": "Oct",
+            "11": "Nov",
+            "12": "Dec"
+        }
+        btb = Button(text="<", on_press= lambda x: self.set_month(x, 0))
+        btn = Button(text=">", on_press= lambda x: self.set_month(x, 1))
+        days_in_month = (datetime.date(self.now.year, self.month + 1, 1) - datetime.date(self.now.year, self.month, 1)).days
+        l = Label(text=self.calender[str(self.month)])
+        bl = BoxLayout(orientation="horizontal")
+        bl.add_widget(btb)
+        bl.add_widget(l)
+        bl.add_widget(btn)
+        self.children[0].add_widget(bl)
         gl = GridLayout(cols=5)
         for num in range(1,days_in_month+1):
             if self.today == num:
@@ -316,7 +381,7 @@ class ScheduleScreen(Screen):
         self.children[0].add_widget(Button(text="Return To Menu", on_press=self.previous_screen))
     
     def refresh_screen(self):
-        for widget in self.children[0].children[0:2]:
+        for widget in self.children[0].children[0:3]:
             self.children[0].remove_widget(widget)
 
 
@@ -325,7 +390,7 @@ class ScheduleScreen(Screen):
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "DayScreen"
-        self.manager.children[0].load(button.text)
+        self.manager.children[0].load(button.text, [i for i,v in self.calender.items() if v == button.parent.parent.children[2].children[1].text][0], self.now.year)
     
     def previous_screen(self, button):
         self.manager.transition.direction = "right"
@@ -336,19 +401,23 @@ class ScheduleScreen(Screen):
 class DayScreen(Screen):
     def set_app(self, app):
         self.app = app
-    def load(self, text):
+    def load(self, text, month, year):
         self.children[0].add_widget(Label(text=text))
         gl = GridLayout(cols=2)
         gl.add_widget(Label(text="Transaction ID"))
         gl.add_widget(TextInput())
-        gl.add_widget(Label(text='Frequency'))
+        gl.add_widget(Label(text='Date'))
+        gl.add_widget(TextInput(text=f"{year}-{month}-{text}"))
+        gl.add_widget(Label(text='Frequency (integer value)'))
+        gl.add_widget(TextInput())
+        gl.add_widget(Label(text='Budget Name'))
+        gl.add_widget(TextInput())
+        gl.add_widget(Label(text='Wallet Name'))
         gl.add_widget(TextInput())
         self.children[0].add_widget(gl)
-        data = {i:v for i,v in list(zip([x.text for x in gl.children if isinstance(x, Label)],[x.text for x in gl.children if isinstance(x, TextInput)]))}
-        print(data)
         bl = BoxLayout(orientation="horizontal")
         previous_screen = Button(text="Back", on_press=self.previous_screen)
-        submit = Button(text="Add to Schedule", on_press=self.submit)
+        submit = Button(text="Add to Schedule", on_press=self.submit_day)
         bl.add_widget(previous_screen)
         bl.add_widget(submit)
         self.children[0].add_widget(bl)
@@ -362,8 +431,10 @@ class DayScreen(Screen):
         self.parent.children[0].refresh_screen()
         self.refresh_screen()
         self.parent.children[0].load_schedule(app)
-    def submit(self, button):
-        pass
+    def submit_day(self, button):
+        gl = self.children[0].children[1]
+        data = {i:v for i,v in list(zip([x.text for x in gl.children if isinstance(x, Label)],[x.text for x in gl.children if isinstance(x, TextInput)]))}
+        print(data)
 
 
 #Budgets
