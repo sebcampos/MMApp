@@ -196,6 +196,7 @@
             bar_color: (1,1,1,1)
             bar_width: 10
             GridLayout:
+                cols: 7
                  
                 
         
@@ -295,11 +296,12 @@
                 text: "Back"
                 on_press:
                     root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
+                    root.manager.transition.duration = "TransactionsScreen"
                     root.manager.current = "MenuScreen"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
                     root.update_db(app)
+
 
