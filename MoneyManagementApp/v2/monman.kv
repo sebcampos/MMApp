@@ -1,0 +1,310 @@
+<RegistrationScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Registration'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        
+        GridLayout:
+            cols: 2
+
+            Label:
+                text:'Username'
+            
+            TextInput:
+	            multiline: False
+                id: username
+                text:'enter desired username'
+        
+            Label:
+                text:'Email'
+            
+            TextInput:
+	            multiline: False
+                id: 'email'
+                text: 'enter email address'
+        
+            Label:
+                text: 'Password'
+            
+            TextInput:
+	            multiline: False
+                id: password
+                password: True
+                text: "password"
+            
+            Label:
+                text: 'Password (confirmation)'
+            
+            TextInput:
+	            multiline: False
+                id: confirmation
+                password: True
+                text: 'password'
+        
+            Label:
+                text: 'Phone number'
+            
+            TextInput:
+	            multiline: False
+                id: phone_number
+                text: 'phone number'
+
+        
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Submit"
+            on_press:
+                root.register(app)
+
+
+<LoginScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Login'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        GridLayout:
+            cols: 2
+
+            Label:
+                text:'Username'
+            
+            TextInput:
+	            multiline: False
+                id: username
+        
+            Label:
+                text: 'Password'
+            
+            TextInput:
+	            multiline: False
+                id: password
+                password: True        
+
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Login"
+            on_press:
+                root.login(app)
+        
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Forgot Password"
+                on_press:
+                    root.reset_password(app)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "New User"
+                on_press:
+                    root.register_new_user(app)
+
+
+<MenuScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Menu'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        BubbleButton:
+            text: 'Transactions'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "TransactionsScreen"
+                
+
+        BubbleButton:
+            text: 'Schedule'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "ScheduleScreen"
+
+        BubbleButton:
+            text: 'Budgets'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "BudgetsScreen"
+
+        BubbleButton:
+            text: 'Wallets'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "WalletsScreen"
+
+        BubbleButton:
+            text: 'Goals'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.transition.direction = "left"
+                root.manager.transition.duration = 1
+                root.manager.current = "GoalsScreen"
+        
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Logout"
+            on_press:
+                root.log_out(app)
+
+<TransactionsScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Transactions'
+            on_parent:
+                root.load_transactions(app)
+
+
+<SubTransactionScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Add Transaction'
+        GridLayout:
+            cols: 2
+            Label:
+                text: 'Location'
+            
+            TextInput:
+	            multiline: False
+
+            Label:
+                text: 'Date'
+            
+            TextInput:
+	            multiline: False
+                text: self.parent.parent.parent.today_timestamp()
+            
+            Label:
+                text: 'Amount'
+            
+            TextInput:
+	            multiline: False
+
+            Label:
+                text: 'Transaction Type'
+            
+            TextInput:
+	            multiline: False
+                text: 'Deposit or Withdrawl'
+            
+            Label:
+                text: 'Tag'
+            
+            TextInput:
+                text: 'No Tag'
+                multiline: False
+            
+            Label:
+                text: 'Wallet Name'
+            
+            TextInput:
+                text: 'No Wallet'
+                multiline: False
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.previous_screen()
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.update_table(app)
+
+<ViewTransactionScreen>
+    on_enter:
+        root.load_transaction(app)
+    
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "Transaction Details"
+        GridLayout:
+            cols: 2
+            Label:
+                text: "Transaction ID"
+            Label:
+                text: ""
+            Label:
+                text: "Date"
+            Label:
+                text: ""
+            Label:
+                text: "Amount"
+            Label:
+                text: ""
+            Label:
+                text: "Location"
+            Label:
+                text: ""
+            Label:
+                text: "Type"
+            Label:
+                text: ""
+            Label:
+                text: "Tag"
+            Label:
+                text: ""
+            Label:
+                text: "Wallet"
+        BoxLayout:
+            orientation: "horizontal"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.previous_screen()
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule"
+                on_press:
+                    root.schedule_transaction(app)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Delete"
+                on_press:
+                    root.delete_transaction(app)
+                
+
+            
+
+            

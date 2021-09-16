@@ -334,15 +334,10 @@ class SubTransactionScreen(Screen):
 class ViewTransactionScreen(Screen):
     def load_transaction(self, app, data="", transactions=""):
         self.children[0].children[1]
-        print(data)
-        try:
-            self.current_transaction = transactions.loc[transactions.transaction_id == int(data)]
-        except:
-            self.current_transaction = ""
+        self.current_transaction = transactions.loc[transactions.transaction_id == int(data)]
         self.children[0].add_widget(Label(text=str(self.current_transaction)))
         
         
-
 
 
 class MonManApp(App):

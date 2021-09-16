@@ -11,53 +11,35 @@
                 Rectangle:
                     size: self.size
                     pos: self.pos
-        
         GridLayout:
             cols: 2
-
             Label:
                 text:'Username'
-            
             TextInput:
 	            multiline: False
                 id: username
-                text:'enter desired username'
-        
             Label:
                 text:'Email'
-            
             TextInput:
 	            multiline: False
                 id: 'email'
-                text: 'enter email address'
-        
             Label:
                 text: 'Password'
-            
             TextInput:
 	            multiline: False
                 id: password
                 password: True
-                text: "password"
-            
             Label:
                 text: 'Password (confirmation)'
-            
             TextInput:
 	            multiline: False
                 id: confirmation
                 password: True
-                text: 'password'
-        
             Label:
                 text: 'Phone number'
-            
             TextInput:
 	            multiline: False
                 id: phone_number
-                text: 'phone number'
-
-        
         BubbleButton:
             background_color: (4, 0, 100, 5)
             size_hint: 0.5, 0.4
@@ -65,8 +47,6 @@
             text: "Submit"
             on_press:
                 root.register(app)
-
-
 <LoginScreen>:
     BoxLayout:
         orientation: 'vertical'
@@ -118,7 +98,6 @@
                 text: "New User"
                 on_press:
                     root.register_new_user(app)
-
 
 <MenuScreen>:
     BoxLayout:
@@ -183,15 +162,68 @@
                 root.log_out(app)
 
 <TransactionsScreen>
+    on_enter: root.load_transactions(app)
     BoxLayout:
         orientation: 'vertical'
         Label:
             text: 'Transactions'
-            on_parent:
-                root.load_transactions(app)
-
-
-<SubTransactionScreen>
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "ID"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Date"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Amount"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Loc"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Type"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Tag"
+                on_press: root.sort_table(self)
+            Button:
+                text: "Wallet"
+                on_press: root.sort_table(self)
+        ScrollView:
+            bar_inactive_color: (1, 1, 1, 1)
+            scroll_type: ["bars"]
+            bar_color: (1,1,1,1)
+            bar_width: 10
+            GridLayout:
+                 
+                
+        
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.manager.transition.direction = "left"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "AddTransactionScreen"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Return to Menu"
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "MenuScreen"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule"
+                on_press:
+                    root.manager.transition.direction = "up"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "ScheduleScreen"
+        
+<AddTransactionScreen>
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -203,64 +235,71 @@
             
             TextInput:
 	            multiline: False
+                halign: "center"
 
             Label:
                 text: 'Date'
             
             TextInput:
 	            multiline: False
-                text: self.parent.parent.parent.today_timestamp()
+                text: root.today_timestamp()
+                halign: "center"
             
             Label:
                 text: 'Amount'
             
             TextInput:
 	            multiline: False
+                halign: "center"
 
             Label:
                 text: 'Transaction Type'
             
-            TextInput:
-	            multiline: False
-                text: 'Deposit or Withdrawl'
-            
+            Button:
+                id: btn
+                text: "Withdrawl"
+                on_parent: dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_release: dropdown.open(self)
+                DropDown:
+                    id: dropdown
+                    on_select: btn.text = f'{args[1]}'
+                    
+                    Button:
+                        text: "Withdrawl"
+                        size_hint_y: None
+                        on_press: dropdown.select("Withdrawl")
+                    Button:
+                        text: "Deposit"
+                        size_hint_y: None
+                        on_press: dropdown.select("Deposit")
+
             Label:
                 text: 'Tag'
             
             TextInput:
                 text: 'No Tag'
                 multiline: False
-            
+                halign: "center"
             Label:
                 text: 'Wallet Name'
             
             TextInput:
                 text: 'No Wallet'
                 multiline: False
+                halign: "center"                
         BoxLayout:
             orientation: 'horizontal'
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Back"
                 on_press:
-                    root.previous_screen()
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "MenuScreen"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
-                    root.update_table(app)
+                    root.update_db(app)
 
-<ViewTransactionScreen>
-    BoxLayout:
-        orientation: "vertical"
-        on_parent:
-            root.load_transaction(app)
-        Label:
-            text: "Transaction Details"
-        GridLayout:
-            cols: 2
-            Label:
-                text: ""
-            TextInput:
-                text: ""
-            
