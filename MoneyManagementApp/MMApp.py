@@ -37,7 +37,7 @@ class DB():
                 location text,
                 transaction_type text,
                 transaction_tag text,
-                wallet_id int
+                wallet_name text
             )""")
         self.cur.execute("""
             CREATE TABLE if not exists Scheduled(
@@ -55,6 +55,7 @@ class DB():
         self.cur.execute("""
             CREATE TABLE if not exists Wallets(
                 wallet_id int,
+                wallet_name text,
                 wallet_amount float,
                 short_description text
             )""")
@@ -131,7 +132,7 @@ class RegistrationScreen(Screen):
 class LoginScreen(Screen):
     def login(self, app):
         user_table = app.db.fetch("User_Table")
-        lst = ['Username','Password']
+        lst = ['Password','Username']
         data = {name: uinput for name, uinput in zip(lst, [i.text for i in self.children[0].children[2].children if i.text not in lst])}
         match = user_table.loc[(user_table.username == data["Username"]) & (user_table.user_password == data["Password"])]
         if len(match) > 0:
@@ -165,19 +166,86 @@ class MenuScreen(Screen):
 
 class TransactionsScreen(Screen):
     def load_transactions(self, app):
+        self.sorted = None
         transactions = app.db.fetch("Transactions")
         if len(transactions) == 0:
             return
-        transactions = transactions.sort_values("transaction_date", inplace=True)
+        #transactions.transaction_date = transactions.transaction_date.apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d')) 
+        transactions.sort_values("transaction_date", inplace=True)
+        transactions.transaction_id = transactions.index
+        self.transactions = transactions
         gl = self.children[0].children[1].children[0]
-        for row in transactions:
-            gl.add_widget(lambda: Button(text="Text"))
+        gl.clear_widgets()
+        gl.size_hint_y = len(transactions)
+        for row in transactions.values:
+            gl.add_widget(BubbleButton(text=f"{row[0]}"))
+            for item in row[1:]:
+                gl.add_widget(Label(text=str(item)))
+    def sort_table(self, button):
+        translate_columns = {
+            "ID":"transaction_id",
+            "Date":"transaction_date",
+            "Amount":"amount",
+            "Loc":"location",
+            "Type":"transaction_type",
+            "Tag":"transaction_tag",
+            "Wallet":"wallet_name"
+        }
+        print(self.sorted)
+        print(button.text)
+        if self.sorted == None or self.sorted != button.text:
+            transactions = self.transactions.sort_values(translate_columns[button.text], ascending=False)
+        elif self.sorted == button.text:
+            transactions = self.transactions.sort_values(translate_columns[button.text])
+        self.sorted = button.text
+        gl = self.children[0].children[1].children[0]
+        gl.clear_widgets()
+        gl.size_hint_y = len(transactions)
+        for row in transactions.values:
+            gl.add_widget(BubbleButton(text=f"{row[0]}"))
+            for item in row[1:]:
+                gl.add_widget(Label(text=str(item)))
+
+
+
     
 class AddTransactionScreen(Screen):
     def today_timestamp(self):
         return f"{datetime.datetime.now().date()}"
-    def update_db(self):
-        pass
+    def update_db(self, app):
+        lst = ["Wallet Name", "Tag", "Transaction Type", "Amount", "Date", "Location"]
+        uinputs = {i:v.text for i,v in zip(lst, [v for v in self.children[0].children[1].children if v.text not in lst])}
+        try:
+            float(uinputs["Amount"])
+        except:
+            cb = BubbleButton(text="Amount Must be a number or decimal\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+        #make this a calender
+        print(uinputs["Date"])
+        try:
+            datetime.datetime.strptime(uinputs["Date"], '%Y-%m-%d')
+        except:
+            cb = BubbleButton(text="Incorrect Date format, YYYY-M-D\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+        app.db.append(pandas.DataFrame({
+            "transaction_date": [uinputs["Date"]],
+            "amount": [uinputs["Amount"]],
+            "location": [uinputs["Location"]],
+            "transaction_type": [uinputs["Transaction Type"]],
+            "transaction_tag": [uinputs["Tag"]],
+            "wallet_name": [uinputs["Wallet Name"]]
+        }), "Transactions" )
+        cb = BubbleButton(text="Transaction Added\n\n\n\n   Close")
+        pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
+        cb.bind(on_press=pu.dismiss)
+        pu.open()
+
 
 
 class MMApp(App):
