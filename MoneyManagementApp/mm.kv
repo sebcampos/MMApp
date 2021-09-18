@@ -85,7 +85,7 @@
             text: "Login"
             on_press:
                 root.login(app)
-        
+       
         BoxLayout:
             orientation: 'horizontal'
             BubbleButton:
@@ -196,10 +196,7 @@
             bar_color: (1,1,1,1)
             bar_width: 10
             GridLayout:
-                cols: 7
-                 
-                
-        
+                cols: 7        
         BoxLayout:
             orientation: 'horizontal'
             BubbleButton:
@@ -225,6 +222,7 @@
                     root.manager.current = "ScheduleScreen"
         
 <AddTransactionScreen>
+    on_enter:
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -261,7 +259,7 @@
                 text: "Withdrawl"
                 on_parent: dropdown.dismiss()
                 size: self.parent.children[0].size
-                on_release: dropdown.open(self)
+                on_press: dropdown.open(self)
                 DropDown:
                     id: dropdown
                     on_select: btn.text = f'{args[1]}'
@@ -296,12 +294,122 @@
                 text: "Back"
                 on_press:
                     root.manager.transition.direction = "right"
-                    root.manager.transition.duration = "TransactionsScreen"
-                    root.manager.current = "MenuScreen"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "TransactionsScreen"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
                     root.update_db(app)
+
+
+<ViewTransactionScreen>    
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "Transaction Details"
+        GridLayout:
+            cols: 2
+            Label:
+                text: "Transaction ID"
+            Label:
+                id: transaction_id
+                text: ""
+            Label:
+                text: "Date"
+            Label:
+                text: ""
+            Label:
+                text: "Amount"
+            Label:
+                text: ""
+            Label:
+                text: "Location"
+            Label:
+                text: ""
+            Label:
+                text: "Type"
+            Label:
+                text: ""
+            Label:
+                text: "Tag"
+            Label:
+                text: ""
+            Label:
+                text: "Wallet"
+            Label:
+                text: ""
+        BoxLayout:
+            orientation: "horizontal"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "TransactionsScreen"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule"
+                on_press:
+                    root.schedule_transaction()
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Delete"
+                on_press:
+                    root.delete_transaction(app, transaction_id.text)
+
+<ScheduleScreen>
+    on_enter:
+        root.clear_calender()
+        root.load_schedule(app)
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Schedule'
+        Label:
+            text: 'Year'
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton: 
+                text: "<"
+                on_press:
+                    root.change_month(self)
+            Label:
+                id: current_month
+                text: ""
+            BubbleButton:
+                text: ">"
+                on_press:
+                    root.change_month(self)
+        GridLayout:
+            cols: 7
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            text: "Return To Menu"
+            on_press:
+                root.manager.transition.direction = "right"
+                root.manager.transition.duration = 1
+                root.manager.current = "MenuScreen"
+<DayScreen>
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "Date"
+        BoxLayout:
+            orientation: "horizontal"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.add_transaction(app)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "ScheduleScreen"
+
 
 
