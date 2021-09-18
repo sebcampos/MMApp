@@ -236,7 +236,7 @@ class ViewTransactionScreen(Screen):
         gl = self.children[0].children[1]
         labels = ["Transaction ID", "Date", "Amount", "Location", "Type", "Tag", "Wallet"]
         for gl_label in gl.children:
-            if gl_label not in labels:
+            if gl_label.text not in labels:
                 gl_label.text = ""  
         
     
