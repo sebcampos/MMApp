@@ -18,28 +18,33 @@
             TextInput:
 	            multiline: False
                 id: username
+                halign: "center"
             Label:
                 text:'Email'
             TextInput:
 	            multiline: False
                 id: 'email'
+                halign: "center"
             Label:
                 text: 'Password'
             TextInput:
 	            multiline: False
                 id: password
                 password: True
+                halign: "center"
             Label:
                 text: 'Password (confirmation)'
             TextInput:
 	            multiline: False
                 id: confirmation
                 password: True
+                halign: "center"
             Label:
                 text: 'Phone number'
             TextInput:
 	            multiline: False
                 id: phone_number
+                halign: "center"                
         BubbleButton:
             background_color: (4, 0, 100, 5)
             size_hint: 0.5, 0.4
@@ -69,6 +74,7 @@
             TextInput:
 	            multiline: False
                 id: username
+                halign: "center"                
         
             Label:
                 text: 'Password'
@@ -76,7 +82,8 @@
             TextInput:
 	            multiline: False
                 id: password
-                password: True        
+                password: True
+                halign: "center"                        
 
         BubbleButton:
             background_color: (4, 0, 100, 5)
@@ -222,7 +229,6 @@
                     root.manager.current = "ScheduleScreen"
         
 <AddTransactionScreen>
-    on_enter:
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -255,8 +261,9 @@
                 text: 'Transaction Type'
             
             Button:
+                on_parent:
+                    btn: btn.__self__
                 id: btn
-                btn: btn.__self__
                 text: "Withdrawl"
                 on_parent: dropdown.dismiss()
                 size: self.parent.children[0].size
@@ -287,7 +294,15 @@
             TextInput:
                 text: 'No Wallet'
                 multiline: False
+                halign: "center"
+            Label:
+                text: 'Frequency'
+            
+            TextInput:
+                text: 'Days'
+                multiline: False
                 halign: "center"                
+                                
         BoxLayout:
             orientation: 'horizontal'
             BubbleButton:
@@ -403,7 +418,7 @@
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
-                    root.add_transaction(app)
+                    root.add_transaction()
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Back"

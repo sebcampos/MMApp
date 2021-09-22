@@ -44,7 +44,8 @@ class DB():
                 transaction_id int,
                 frequency int,
                 scheduled_date date,
-                transaction_type text
+                transaction_type text,
+                wallet_name text
             )""")
         self.cur.execute("""
             CREATE TABLE if not exists Goals(
@@ -243,11 +244,25 @@ class ViewTransactionScreen(Screen):
 class AddTransactionScreen(Screen):
     def today_timestamp(self):
         return f"{datetime.datetime.now().date()}"
-    def update_db(self, app, schedule=False, new_date=False):
-        if schedule == True:
-            return
-        lst = ["Wallet Name", "Tag", "Transaction Type", "Amount", "Date", "Location"]
-        uinputs = {i:v.text for i,v in zip(lst, [v for v in self.children[0].children[1].children if v.text not in lst])}
+    
+    def schedule(self, date):
+        #add date and wait for frequency
+        new_item = False
+        for child in self.children[0].children[1].children:
+            if new_item == True:
+                child.text = date
+                break
+            if child.text == "Amount":
+                new_item = True
+                
+                
+
+    def update_db(self, app, schedule=False):
+        lst = ["Frequency", "Wallet Name", "Tag", "Transaction Type", "Amount", "Date", "Location"]
+        uinputs = {i:v.text for i,v in zip(lst, [v for v in self.children[0].children[1].children if v.text not in lst])}        
+        for i,v in uinputs.items():
+            print(f"{i} : {v}")
+        #throw error for amount that cannot be converted to a float
         try:
             float(uinputs["Amount"])
         except:
@@ -256,7 +271,8 @@ class AddTransactionScreen(Screen):
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
-        #make this a calender
+        #throw error if datetime is not in proper format
+        ##make this a calender
         try:
             datetime.datetime.strptime(uinputs["Date"], '%Y-%m-%d')
         except:
@@ -265,6 +281,25 @@ class AddTransactionScreen(Screen):
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
+
+        if uinputs["Frequency"] != "" and uinputs["Frequency"] != "Days":      
+            #throw error is frequency is not an integer
+            try:
+                int(uinputs["Frequency"])
+                app.db.append(pandas.DataFrame({
+                    "transaction_id":["None"],
+                    "frequency": [uinputs["Frequency"]],
+                    "scheduled_date": [uinputs["Date"]],
+                    "transaction_type": [uinputs["Transaction Type"]],
+                    "wallet_name": [uinputs["Wallet Name"]]
+                }), "Scheduled")
+            except Exception as e:
+                print(e)
+                cb = BubbleButton(text="Frequency needs to be an integer\n\n\n\n   Close")
+                pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+                cb.bind(on_press=pu.dismiss)
+                pu.open()
+                return        
         app.db.append(pandas.DataFrame({
             "transaction_date": [uinputs["Date"]],
             "amount": [uinputs["Amount"]],
@@ -377,12 +412,16 @@ class ScheduleScreen(Screen):
 
 class DayScreen(Screen):
     def load_day(self, schedule, year, month, day):
-        print(schedule, year, month, day)
+        self.schedule = schedule
+        self.year = year
+        self.month = month 
+        self.day = day
         self.children[0].children[1].text = f"{year}-{month}-{day}"
         if len(schedule) == 0:
             return
-    def add_transaction(self, app):
-        self.manager.get_screen("AddTransactionScreen").update_db(app, schedule=True)
+        print(schedule)
+    def add_transaction(self):
+        self.manager.get_screen("AddTransactionScreen").schedule(f"{self.year}-{self.month}-{self.day}")
         self.manager.transition.direction = "down"
         self.manager.transition.duration = 1
         self.manager.current = "AddTransactionScreen"
