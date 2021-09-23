@@ -186,7 +186,7 @@ class TransactionsScreen(Screen):
         gl.clear_widgets()
         gl.size_hint_y = len(transactions)
         for row in transactions.values:
-            gl.add_widget(BubbleButton(text=f"{row[0]}", on_press=self.find_transaction))
+            gl.add_widget(BubbleButton(text=f"{row[0]}", on_press=self.find_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
             for item in row[1:]:
                 gl.add_widget(Label(text=str(item)))
         return
@@ -217,12 +217,12 @@ class TransactionsScreen(Screen):
                 gl.add_widget(Label(text=str(item)))
         return
 
-
 class ViewTransactionScreen(Screen):
     def load_transaction(self, transaction_num, dataframe): 
         transaction = dataframe.loc[dataframe.transaction_id == int(transaction_num)]
         gl = self.children[0].children[1]
         lst = [str(i) for i in transaction.values[0]]
+        self.data = transaction
         labels = ["Transaction ID", "Date", "Amount", "Location", "Type", "Tag", "Wallet"]
         lst.reverse()
         for gl_label,new_text in zip([child for child in gl.children if child.text not in labels],lst):
@@ -238,14 +238,30 @@ class ViewTransactionScreen(Screen):
         labels = ["Transaction ID", "Date", "Amount", "Location", "Type", "Tag", "Wallet"]
         for gl_label in gl.children:
             if gl_label.text not in labels:
-                gl_label.text = ""  
-        
-    
+                gl_label.text = ""
+    def schedule_transaction(self):
+        self.manager.get_screen("AddTransactionScreen").schedule(self.data["transaction_date"], data=self.data)
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "AddTransactionScreen"
+
+            
 class AddTransactionScreen(Screen):
     def today_timestamp(self):
         return f"{datetime.datetime.now().date()}"
     
-    def schedule(self, date):
+    def schedule(self, date, data=[]):
+        #if data is true fill info
+        if len(data) != 0:
+            lst = ["Frequency", "Wallet Name", "Tag", "Transaction Type", "Amount", "Date", "Location"]
+            data = data[["location", "transaction_date","amount","transaction_type","transaction_tag","wallet_name"]].values.tolist()[0]
+            data.reverse()
+            textinputs = [widget for widget in self.children[0].children[1].children[1:] if widget.text not in lst]
+            for widget,info in zip(textinputs,data):
+                widget.text = str(info)
+            self.transaction_exists = True
+            return
+        
         #add date and wait for frequency
         new_item = False
         for child in self.children[0].children[1].children:
@@ -254,10 +270,8 @@ class AddTransactionScreen(Screen):
                 break
             if child.text == "Amount":
                 new_item = True
-                
-                
-
-    def update_db(self, app, schedule=False):
+        return
+    def update_db(self, app):
         lst = ["Frequency", "Wallet Name", "Tag", "Transaction Type", "Amount", "Date", "Location"]
         uinputs = {i:v.text for i,v in zip(lst, [v for v in self.children[0].children[1].children if v.text not in lst])}        
         for i,v in uinputs.items():
@@ -276,7 +290,7 @@ class AddTransactionScreen(Screen):
         try:
             datetime.datetime.strptime(uinputs["Date"], '%Y-%m-%d')
         except:
-            cb = BubbleButton(text="Incorrect Date format, YYYY-M-D\n\n\n\n   Close")
+            cb = BubbleButton(text="Incorrect Date format, YYYY-MM-D\n\n\n\n   Close")
             pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
@@ -300,6 +314,12 @@ class AddTransactionScreen(Screen):
                 cb.bind(on_press=pu.dismiss)
                 pu.open()
                 return        
+        try:
+            if self.transaction_exists == True:
+                self.transaction_exists = False
+                return
+        except Exception as e:
+            print(e)
         app.db.append(pandas.DataFrame({
             "transaction_date": [uinputs["Date"]],
             "amount": [uinputs["Amount"]],
@@ -346,14 +366,22 @@ class ScheduleScreen(Screen):
             gl.add_widget(Label(text=f"{self.weekdays[datetime.date(today.year, today.month, i).weekday()]}"))
 
         for i in range(1,days_in_month+1):
-            bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+            if len(str(today.month)) == 1:
+                month = f"0{today.month}"
+            else:
+                month = today.month
+            if f"{self.year}-{month}-{i}" in list(self.schedule["scheduled_date"]) or f"{self.year}-{month}-0{i}" in list(self.schedule["scheduled_date"]):
+                bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+                bb.background_normal = ""
+                bb.background_color=  (.4, .5, 100, .3)
+            else:
+                bb = BubbleButton(text=f"{i}", on_press=self.view_day)
             bb.halign = "center"
             bb.valign = "middle"
-            bb.background_color =  (.4, .5, 100, .3)
             bb.text_size = (20,20)
             gl.add_widget(bb)
         self.selected_month = today.month
-    
+   
     def view_day(self, button):
         self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, button.text)
         self.manager.transition.direction = "left"
@@ -380,7 +408,14 @@ class ScheduleScreen(Screen):
                 gl.add_widget(Label(text=f"{self.weekdays[datetime.date(self.year, current_month, i).weekday()]}"))
 
             for i in range(1,days_in_month+1):
-                bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+                if len(str(current_month)) == 1:
+                    padded_month = f"0{current_month}"
+                if f"{self.year}-{padded_month}-{i}" in list(self.schedule["scheduled_date"]) or f"{self.year}-{padded_month}-0{i}" in list(self.schedule["scheduled_date"]):
+                    bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+                    bb.background_normal = ""
+                    bb.background_color=  (.4, .5, 100, .3)
+                else:
+                    bb = BubbleButton(text=f"{i}", on_press=self.view_day)
                 bb.halign = "center"
                 bb.valign = "middle"
                 bb.text_size = bb.size
@@ -402,7 +437,16 @@ class ScheduleScreen(Screen):
             for i in range(1,8):
                 gl.add_widget(Label(text=f"{self.weekdays[datetime.date(self.year, current_month, i).weekday()]}"))            
             for i in range(1, days_in_month+1):
-                bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+                if len(str(current_month)) == 1:
+                    padded_month = f"0{current_month}"
+                else:
+                    padded_month = current_month              
+                if f"{self.year}-{padded_month}-{i}" in list(self.schedule["scheduled_date"]) or f"{self.year}-{padded_month}-0{i}" in list(self.schedule["scheduled_date"]):
+                    bb = BubbleButton(text=f"{i}", on_press=self.view_day)
+                    bb.background_normal = ""
+                    bb.background_color=  (.4, .5, 100, .3)
+                else:
+                    bb = BubbleButton(text=f"{i}", on_press=self.view_day)
                 bb.halign = "center"
                 bb.valign = "middle"
                 bb.text_size = bb.size
@@ -421,6 +465,10 @@ class DayScreen(Screen):
             return
         print(schedule)
     def add_transaction(self):
+        if len(str(self.month)) == 1:
+            self.month = f"0{self.month}"
+        if len(str(self.day)) == 1:
+            self.day = f"0{self.day}"
         self.manager.get_screen("AddTransactionScreen").schedule(f"{self.year}-{self.month}-{self.day}")
         self.manager.transition.direction = "down"
         self.manager.transition.duration = 1
