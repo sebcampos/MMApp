@@ -229,6 +229,7 @@
                     root.manager.current = "ScheduleScreen"
         
 <AddTransactionScreen>
+    btn: btn.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -261,8 +262,6 @@
                 text: 'Transaction Type'
             
             Button:
-                on_parent:
-                    btn: btn.__self__
                 id: btn
                 text: "Withdrawl"
                 on_parent: dropdown.dismiss()
@@ -359,7 +358,7 @@
             orientation: "horizontal"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
-                text: "Back"
+                text: "Transactions"
                 on_press:
                     root.manager.transition.direction = "right"
                     root.manager.transition.duration = 1
@@ -367,6 +366,13 @@
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Schedule"
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "ScheduleScreen"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule Transaction"
                 on_press:
                     root.schedule_transaction()
             BubbleButton:
@@ -412,6 +418,21 @@
         orientation: "vertical"
         Label:
             text: "Date"
+        BoxLayout:
+            orientation: "horizontal"
+            Label:
+                text: "Transaction ID"
+            Label:
+                text: "Frequency"
+            Label:
+                text: "Scheduled on"
+            Label:
+                text: "Transaction Type"
+            Label:
+                text: "Wallet"
+        GridLayout:
+            cols: 5
+
         BoxLayout:
             orientation: "horizontal"
             BubbleButton:
