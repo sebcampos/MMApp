@@ -418,6 +418,8 @@ class ScheduleScreen(Screen):
             for i in range(1,days_in_month+1):
                 if len(str(current_month)) == 1:
                     padded_month = f"0{current_month}"
+                else:
+                    padded_month = current_month
                 if f"{self.year}-{padded_month}-{i}" in list(self.schedule["scheduled_date"]) or f"{self.year}-{padded_month}-0{i}" in list(self.schedule["scheduled_date"]):
                     bb = BubbleButton(text=f"{i}", on_press=self.view_day)
                     bb.background_normal = ""
