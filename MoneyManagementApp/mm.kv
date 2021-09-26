@@ -58,6 +58,8 @@
             on_press:
                 root.register(app)
 <LoginScreen>:
+    username: username.__self__
+    password: password.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -104,12 +106,14 @@
                 background_color: (4, 0, 100, 5)
                 text: "Forgot Password"
                 on_press:
-                    root.reset_password(app)
+                    root.reset_password()
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "New User"
                 on_press:
-                    root.register_new_user(app)
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "RegistrationScreen"
 
 <MenuScreen>:
     BoxLayout:
@@ -181,25 +185,32 @@
             text: 'Transactions'
         BoxLayout:
             orientation: 'horizontal'
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "ID"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Date"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Amount"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Loc"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Type"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Tag"
                 on_press: root.sort_table(self)
-            Button:
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Wallet"
                 on_press: root.sort_table(self)
         ScrollView:
@@ -208,6 +219,7 @@
             bar_color: (1,1,1,1)
             bar_width: 10
             GridLayout:
+                id: gl
                 cols: 7        
         BoxLayout:
             orientation: 'horizontal'
