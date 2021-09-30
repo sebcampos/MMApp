@@ -4,6 +4,7 @@ import pandas
 import datetime
 import random
 import json
+from credentials import end_point_address
 
 
 import kivy
@@ -66,7 +67,7 @@ class LoginScreen(Screen):
         #add password check logic
         
         #request to API for credential confirmation
-        req = UrlRequest("http://34.94.45.224/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({
+        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({
             "username":self.ids["username"].text,
             "password":self.ids["password"].text,
             "user_id": app.user_id
@@ -107,7 +108,7 @@ class MenuScreen(Screen):
 
 class TransactionsScreen(Screen):
     def load_transactions(self, app):
-        print(self.parent.parent.parent, app)
+        print(self.parent, app)
 
 
 
