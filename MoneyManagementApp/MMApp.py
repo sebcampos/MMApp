@@ -20,6 +20,27 @@ kivy.require('2.0.0')
 #Config files located on iOS = <HOME_DIRECTORY>/Documents/.kivy/config.ini
 # os.environ['KIVY_EVENTLOOP'] = 'asyncio'
 
+
+def encryption(data, encrypt=True):
+    if encrypt == True:
+        key = ""
+        with open("pubkey","rb") as f:
+            key += f.read()
+            pubkey = rsa.PublicKey.load_pkcs1(key)
+        encoded_message = rsa.encrypt(data.encode(), pubkey)
+        return encoded_message
+    elif encrypt == False:
+        key = ""
+        with open("privkey","rb") as f:
+            key += f.read()
+            privkey = rsa.PrivateKey.load_pkcs1(key)
+        decoded_message = rsa.decrypt(data, privkey).decode()
+        return decoded_message
+
+        
+    
+
+
 #User class
 class User():
     def __init__(self, user_id, phone_number, password, email, username):
@@ -28,6 +49,13 @@ class User():
         self.email = email
         self.password = password
         self.phone_number = phone_number
+        self.dataframe = pandas.DataFrame({
+            "user_id": [self.user_id],
+            "username": [self.username],
+            "user_email": [self.email],
+            "user_password": [self.password],
+            "phone_number": [self.phone_number]
+        })
          
     def __repr__(self):
         return f"Username:\t{self.username}\nEmail:\t{self.email}\nPassword:\t{self.password}\nPhone:\t{self.phone_number}"
@@ -43,19 +71,15 @@ class RegistrationScreen(Screen):
             pu.open()
             return
         #Make a Post request to register user endpoint and encode password with rsa
-        key = ""
-        with open("pubkey","rb") as f:
-            key += f.read()
-        pubkey = rsa.PublicKey.load_pkcs1(key)
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         del user_data_dict["confirmation"]
-        user_data_dict["password"] = rsa.encrypt(user_data_dict["password"].encode(), pubkey)
+        user_data_dict["password"] = encryption(user_data_dict["password"])
         req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(user_data_dict), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
-            app.user = User(response["id"], self.ids["username"].text,  self.ids["email"].text, self.ids["password"].text, self.ids["phone_number"].text)
+            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["password"], user_data_dict["phone_number"])
             app.user_id = response["id"]
             with open("UserID","w") as f:
                 f.write(response["id"])
@@ -78,13 +102,8 @@ class RegistrationScreen(Screen):
 class LoginScreen(Screen):
     def login(self, app):
         #encrypt password
-        key = ""
-        with open("pubkey","rb") as f:
-            key += f.read()
-        pubkey = rsa.PublicKey.load_pkcs1(key)
-        password = rsa.encrypt(self.ids["password"].text.encode(), pubkey)
+        password = encryption(self.ids["password"].text)
 
-        
         #request to API for credential confirmation
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({
             "username":self.ids["username"].text,
