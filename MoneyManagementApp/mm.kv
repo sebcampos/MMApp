@@ -178,7 +178,8 @@
                 root.log_out(app)
 
 <TransactionsScreen>
-    on_enter: root.load_transactions(app)
+    on_enter: root.display_transactions(app)
+    gl: gl.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -246,7 +247,14 @@
                     root.manager.current = "ScheduleScreen"
         
 <AddTransactionScreen>
-    btn: btn.__self__
+    transaction_type: transaction_type.__self__
+    location: location.__self__
+    date: date.__self__
+    amount: amount.__self__
+    tag: tag.__self__
+    wallet: wallet.__self__
+    freq: freq.__self__
+
     dropdown: dropdown.__self__
     BoxLayout:
         orientation: 'vertical'
@@ -258,6 +266,7 @@
                 text: 'Location'
             
             TextInput:
+                id: location
 	            multiline: False
                 halign: "center"
 
@@ -265,6 +274,7 @@
                 text: 'Date'
             
             TextInput:
+                id: date
 	            multiline: False
                 text: root.today_timestamp()
                 halign: "center"
@@ -273,6 +283,7 @@
                 text: 'Amount'
             
             TextInput:
+                id: amount
 	            multiline: False
                 halign: "center"
 
@@ -280,14 +291,14 @@
                 text: 'Transaction Type'
             
             Button:
-                id: btn
+                id: transaction_type
                 text: "Withdrawl"
                 on_parent: dropdown.dismiss()
                 size: self.parent.children[0].size
                 on_press: dropdown.open(self)
                 DropDown:
                     id: dropdown
-                    on_select: btn.text = f'{args[1]}'
+                    on_select: transaction_type.text = f'{args[1]}'
                     
                     Button:
                         text: "Withdrawl"
@@ -302,6 +313,7 @@
                 text: 'Tag'
             
             TextInput:
+                id: tag
                 text: 'No Tag'
                 multiline: False
                 halign: "center"
@@ -309,6 +321,7 @@
                 text: 'Wallet Name'
             
             TextInput:
+                id: wallet
                 text: 'No Wallet'
                 multiline: False
                 halign: "center"
@@ -316,6 +329,7 @@
                 text: 'Frequency'
             
             TextInput:
+                id: freq
                 text: 'Days'
                 multiline: False
                 halign: "center"                
@@ -333,7 +347,7 @@
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
-                    root.update_db(app)
+                    root.add_transaction(app)
 
 
 <ViewTransactionScreen>    

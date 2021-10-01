@@ -4,6 +4,7 @@ import pandas
 import datetime
 import random
 import json
+import rsa
 from credentials import end_point_address
 
 
@@ -34,16 +35,25 @@ class User():
 #Registration Screen
 class RegistrationScreen(Screen):
     def register(self, app):
+        #check if user entered password matches confirmation input
         if self.ids["password"].text != self.ids["confirmation"].text:
             cb = BubbleButton(text="Passwords do not match\n\n\n\n   Close")
             pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
-        
-        req = UrlRequest("http://34.94.45.224/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({i:v.text for i,v in self.ids.items()}))
+        #Make a Post request to register user endpoint and encode password with rsa
+        key = ""
+        with open("pubkey","rb") as f:
+            key += f.read()
+        pubkey = rsa.PublicKey.load_pkcs1(key)
+        user_data_dict = {i:v.text for i,v in self.ids.items()}
+        del user_data_dict["confirmation"]
+        user_data_dict["password"] = rsa.encrypt(user_data_dict["password"].encode(), pubkey)
+        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(user_data_dict), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
+        #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
             app.user = User(response["id"], self.ids["username"].text,  self.ids["email"].text, self.ids["password"].text, self.ids["phone_number"].text)
             app.user_id = response["id"]
@@ -54,32 +64,47 @@ class RegistrationScreen(Screen):
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
             self.manager.current = "MenuScreen"
+        #if Unsuccessfull return Registration error message popup
         else:
             cb = BubbleButton(text="User Name Already Exists\n\n\n\n   Close")
             pu = Popup(title="RegistrationError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
+    def animation(*argsv):
+        print(argsv)
 
 #Login Screen
 class LoginScreen(Screen):
     def login(self, app):
-        #add password check logic
+        #encrypt password
+        key = ""
+        with open("pubkey","rb") as f:
+            key += f.read()
+        pubkey = rsa.PublicKey.load_pkcs1(key)
+        password = rsa.encrypt(self.ids["password"].text.encode(), pubkey)
+
         
         #request to API for credential confirmation
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({
             "username":self.ids["username"].text,
-            "password":self.ids["password"].text,
+            "password": password,
             "user_id": app.user_id
-            }))
+            }), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
         
-        #hand to menu screen if succesful
+        #if Successfull collect user data
         if "Success" in response.keys():
+            app.transactions = pandas.DataFrame.from_dict(response["Transactions"])
+            app.schedule = pandas.DataFrame.from_dict(response["Schedule"])
+            app.goals = pandas.DataFrame.from_dict(response["Goals"])
+            app.wallets = pandas.DataFrame.from_dict(response["Wallets"])
+            app.budgets =  pandas.DataFrame.from_dict(response["Budgets"])
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
             self.manager.current = "MenuScreen"
+
             return
         
         #return a pop up with Error message if failed
@@ -91,7 +116,8 @@ class LoginScreen(Screen):
             pu.open()
             return
 
-
+    def animation(*argsv):
+        print(argsv)
 
     def reset_password(self):
         pass
@@ -107,8 +133,90 @@ class MenuScreen(Screen):
         self.manager.current = "LoginScreen"
 
 class TransactionsScreen(Screen):
-    def load_transactions(self, app):
-        print(self.parent, app)
+    #display transaction data on screen
+    def display_transactions(self, app):
+        #define a column maping dictionary
+        self.translate_columns = {
+            "ID":"transaction_id",
+            "Date":"transaction_date",
+            "Amount":"amount",
+            "Loc":"location",
+            "Type":"transaction_type",
+            "Tag":"transaction_tag",
+            "Wallet":"wallet_name"
+        }
+
+        self.transactions = app.transactions
+
+        #define a column state dictionary for sorting function
+        self.column_states = {}
+        for column in self.translate_columns.keys():
+            self.column_states[column] = "descending"
+
+        #load the GridLayout object
+        gl = self.ids["gl"]
+        
+        #clear the widgets on gl in case there are any currently existing
+        gl.clear_widgets()
+
+        #iterate over the transactions dataframe and add values to the kivy Gridlayout object
+        for row in app.transactions.values:
+            gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+            for cell in row[1:]:
+                gl.add_widget(Label(text=str(cell)))
+
+    #sort table on screen based on button/columns
+    def sort_table(self, button):
+        #load the GridLayout object
+        gl = self.ids["gl"]
+        
+        #clear the current widgets on gl
+        gl.clear_widgets()
+
+        #if the button state is in decending sort column values in ascending order
+        if self.column_states[button.text] == "descending": 
+            for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+                for cell in row[1:]:
+                    gl.add_widget(Label(text=str(cell)))
+            #set new state to ascending
+            self.column_states[button.text] = "ascending"
+            return
+        
+        #if the button state is in ascending sort column values in decending order
+        elif self.column_states[button.text] == "ascending": 
+            for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=False).values:
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+                for cell in row[1:]:
+                    gl.add_widget(Label(text=str(cell)))
+            #set new state to descending                    
+            self.column_states[button.text] = "descending"
+            return
+    
+    #load a transaction and transition screen when clicked
+    def load_transaction(self, button):
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "ViewTransactionScreen"
+        self.manager.get_screen("ViewTransactionScreen").populate_screen(self.transactions, button.text)
+        
+
+class ViewTransactionScreen(Screen):
+    def populate_screen(self, transactions_df, transaction_id):
+        pass
+    
+    def delete_transaction(self):
+        ## Delete from all tables ##
+        pass
+
+
+class AddTransactionScreen(Screen):
+    #today timestamp
+    def today_timestamp(self):
+        return f"{datetime.datetime.now().date()}"
+    #add transaction to current table(s) and update table(s) over API
+    def add_transaction(self, app):
+        
 
 
 
@@ -133,8 +241,8 @@ class MMApp(App):
         self.sm.add_widget(LoginScreen(name="LoginScreen"))
         self.sm.add_widget(MenuScreen(name="MenuScreen"))
         self.sm.add_widget(TransactionsScreen(name="TransactionsScreen"))
-        # self.sm.add_widget(AddTransactionScreen(name="AddTransactionScreen"))
-        # self.sm.add_widget(ViewTransactionScreen(name="ViewTransactionScreen"))
+        self.sm.add_widget(AddTransactionScreen(name="AddTransactionScreen"))
+        self.sm.add_widget(ViewTransactionScreen(name="ViewTransactionScreen"))
         # self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
         # self.sm.add_widget(DayScreen(name="DayScreen"))
         # self.sm.add_widget(BudgetScreen(name="BudgetScreen"))
