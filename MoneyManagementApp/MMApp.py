@@ -23,16 +23,14 @@ kivy.require('2.0.0')
 
 def encryption(data, encrypt=True):
     if encrypt == True:
-        key = ""
         with open("pubkey","rb") as f:
-            key += f.read()
+            key = f.read()
             pubkey = rsa.PublicKey.load_pkcs1(key)
         encoded_message = rsa.encrypt(data.encode(), pubkey)
         return encoded_message
     elif encrypt == False:
-        key = ""
         with open("privkey","rb") as f:
-            key += f.read()
+            key = f.read()
             privkey = rsa.PrivateKey.load_pkcs1(key)
         decoded_message = rsa.decrypt(data, privkey).decode()
         return decoded_message
@@ -73,7 +71,7 @@ class RegistrationScreen(Screen):
         #Make a Post request to register user endpoint and encode password with rsa
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         del user_data_dict["confirmation"]
-        user_data_dict["password"] = encryption(user_data_dict["password"])
+        user_data_dict["password"] = str(encryption(user_data_dict["password"]))
         req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(user_data_dict), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
@@ -235,6 +233,7 @@ class AddTransactionScreen(Screen):
         return f"{datetime.datetime.now().date()}"
     #add transaction to current table(s) and update table(s) over API
     def add_transaction(self, app):
+        pass
         
 
 
