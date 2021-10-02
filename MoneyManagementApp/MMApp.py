@@ -70,14 +70,20 @@ class RegistrationScreen(Screen):
             return
         #Make a Post request to register user endpoint and encode password with rsa
         user_data_dict = {i:v.text for i,v in self.ids.items()}
+        #collect password in bytes
+        password = encryption(user_data_dict["password"])
+        #delete password strings
         del user_data_dict["confirmation"]
-        user_data_dict["password"] = str(encryption(user_data_dict["password"]))
+        del user_data_dict["password"]
         req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(user_data_dict), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
-            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["password"], user_data_dict["phone_number"])
+            #post password bytes
+            req = UrlRequest(f"http://{end_point_address}/register_user/final_function", req_headers={'Content-type': 'application/octet-stream'}, req_body=password, on_progress=self.animation, timeout=10)
+            req.wait()
+            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], password, user_data_dict["phone_number"])
             app.user_id = response["id"]
             with open("UserID","w") as f:
                 f.write(response["id"])
