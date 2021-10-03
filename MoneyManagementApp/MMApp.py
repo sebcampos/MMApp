@@ -4,8 +4,8 @@ import pandas
 import datetime
 import random
 import json
-import rsa
-from credentials import end_point_address
+import base64
+from credentials import end_point_address, encryption, create_keys_rsa, AES_decrypt, AES_encrypt, AES_set_up
 
 
 import kivy
@@ -19,24 +19,6 @@ from kivy.app import App
 kivy.require('2.0.0')
 #Config files located on iOS = <HOME_DIRECTORY>/Documents/.kivy/config.ini
 # os.environ['KIVY_EVENTLOOP'] = 'asyncio'
-
-
-def encryption(data, encrypt=True):
-    if encrypt == True:
-        with open("pubkey","rb") as f:
-            key = f.read()
-            pubkey = rsa.PublicKey.load_pkcs1(key)
-        encoded_message = rsa.encrypt(data.encode(), pubkey)
-        return encoded_message
-    elif encrypt == False:
-        with open("privkey","rb") as f:
-            key = f.read()
-            privkey = rsa.PrivateKey.load_pkcs1(key)
-        decoded_message = rsa.decrypt(data, privkey).decode()
-        return decoded_message
-
-        
-    
 
 
 #User class
@@ -68,25 +50,32 @@ class RegistrationScreen(Screen):
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
+
+        #create credentials to cipher larger data
+        key, cipher, nonce = AES_set_up()
+		with open("AES_key","wb") as f:
+			f.write(key)
+		with open("AES_nonce","wb") as f:
+			f.write(nonce)    
         #Make a Post request to register user endpoint and encode password with rsa
         user_data_dict = {i:v.text for i,v in self.ids.items()}
-        #collect password in bytes
-        password = encryption(user_data_dict["password"])
-        #delete password strings
-        del user_data_dict["confirmation"]
-        del user_data_dict["password"]
-        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(user_data_dict), on_progress=self.animation, timeout=10)
+        user_data_dict["key"] = base64.b64encode(key).decode()
+        user_data_dict["nonce"] = base64.b64encode(nonce).decode()
+        data = encryption(json.dumps(user_data_dict))
+        #send json data as encrypted bytes
+        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10)
         req.wait()
-        response = json.loads(req.result)
+        print(req.result)
+        response = json.loads(encryption(req.result, encrypt=False))
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
-            #post password bytes
-            req = UrlRequest(f"http://{end_point_address}/register_user/final_function", req_headers={'Content-type': 'application/octet-stream'}, req_body=password, on_progress=self.animation, timeout=10)
-            req.wait()
-            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], password, user_data_dict["phone_number"])
-            app.user_id = response["id"]
+            print(response)
+            #app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
+            #app.user_id = response["id"]
             with open("UserID","w") as f:
                 f.write(response["id"])
+            # with open()
+
             for w in self.ids.values():
                 w.text = ""
             self.manager.transition.direction = "left"
