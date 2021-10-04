@@ -52,23 +52,22 @@ class RegistrationScreen(Screen):
             return 
         #Make a Post request to register user endpoint and encode password with rsa
         user_data_dict = {i:v.text for i,v in self.ids.items()}
-        # user_data_dict["key"] = base64.b64encode(key).decode()
-        # user_data_dict["nonce"] = base64.b64encode(nonce).decode()
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
         req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10)
         req.wait()
-        print(req.result)
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
             print(response)
+            data = decrypt_packet(response)
+            print(data)
             #app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
             #app.user_id = response["id"]
-            with open("UserID","w") as f:
-                f.write(response["id"])
+            # with open("UserID","w") as f:
+            #     f.write(response["id"])
             
-            print(response)
+            print("this far")
 
             for w in self.ids.values():
                 w.text = ""
