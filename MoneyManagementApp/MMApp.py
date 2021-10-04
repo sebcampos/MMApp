@@ -4,8 +4,7 @@ import pandas
 import datetime
 import random
 import json
-import base64
-from credentials import end_point_address, encryption, create_keys_rsa, AES_decrypt, AES_encrypt 
+from credentials import end_point_address, encryption, create_keys_rsa, encrypt_packet, decrypt_packet
 
 
 import kivy
@@ -61,7 +60,7 @@ class RegistrationScreen(Screen):
         if "Success" in response.keys():
             print(response)
             data = decrypt_packet(response)
-            print(data)
+            print(data.keys())
             #app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
             #app.user_id = response["id"]
             # with open("UserID","w") as f:
