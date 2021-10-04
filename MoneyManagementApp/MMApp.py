@@ -5,7 +5,7 @@ import datetime
 import random
 import json
 import base64
-from credentials import end_point_address, encryption, create_keys_rsa, AES_decrypt, AES_encrypt, AES_set_up
+from credentials import end_point_address, encryption, create_keys_rsa, AES_decrypt, AES_encrypt 
 
 
 import kivy
@@ -49,24 +49,17 @@ class RegistrationScreen(Screen):
             pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
-            return
-
-        #create credentials to cipher larger data
-        key, cipher, nonce = AES_set_up()
-		with open("AES_key","wb") as f:
-			f.write(key)
-		with open("AES_nonce","wb") as f:
-			f.write(nonce)    
+            return 
         #Make a Post request to register user endpoint and encode password with rsa
         user_data_dict = {i:v.text for i,v in self.ids.items()}
-        user_data_dict["key"] = base64.b64encode(key).decode()
-        user_data_dict["nonce"] = base64.b64encode(nonce).decode()
+        # user_data_dict["key"] = base64.b64encode(key).decode()
+        # user_data_dict["nonce"] = base64.b64encode(nonce).decode()
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
         req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10)
         req.wait()
         print(req.result)
-        response = json.loads(encryption(req.result, encrypt=False))
+        response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
             print(response)
@@ -74,7 +67,8 @@ class RegistrationScreen(Screen):
             #app.user_id = response["id"]
             with open("UserID","w") as f:
                 f.write(response["id"])
-            # with open()
+            
+            print(response)
 
             for w in self.ids.values():
                 w.text = ""
