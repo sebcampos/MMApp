@@ -25,7 +25,6 @@ class User():
         self.user_id = user_id
         self.username = username
         self.email = email
-        self.password = password
         self.phone_number = phone_number
         self.dataframe = pandas.DataFrame({
             "user_id": [self.user_id],
