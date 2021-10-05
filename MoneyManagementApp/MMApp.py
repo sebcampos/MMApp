@@ -93,22 +93,26 @@ class RegistrationScreen(Screen):
 #Login Screen
 class LoginScreen(Screen):
     def login(self, app):
+        user = self.ids['username'].text
         #encrypt packet
         packet = encrypt_packet({i:v.text for i,v in self.ids.items()}, user = self.ids['username'].text)
-        packet["USER"] = self.ids['username'].text
+        packet["USER"] = user
+        with open("UserID", "r") as f:
+            packet["USERID"] = f.read()
         #request to API for credential confirmation
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
         req.wait()
-        response = json.loads(req.result)
-        print(response)
+        packet = json.loads(req.result)
         
         #if Successfull collect user data
-        if "Success" in response.keys():
-            app.transactions = pandas.DataFrame.from_dict(response["Transactions"])
-            app.schedule = pandas.DataFrame.from_dict(response["Schedule"])
-            app.goals = pandas.DataFrame.from_dict(response["Goals"])
-            app.wallets = pandas.DataFrame.from_dict(response["Wallets"])
-            app.budgets =  pandas.DataFrame.from_dict(response["Budgets"])
+        if "Success" in packet.keys():
+            del packet["Success"]
+            packet = decrypt_packet(packet, user = user)
+            app.transactions = pandas.DataFrame.from_dict(json.loads(packet["Transactions"]))
+            app.schedule = pandas.DataFrame.from_dict(json.loads(packet["Schedule"]))
+            app.goals = pandas.DataFrame.from_dict(json.loads(packet["Goals"]))
+            app.wallets = pandas.DataFrame.from_dict(json.loads(packet["Wallets"]))
+            app.budgets =  pandas.DataFrame.from_dict(json.loads(packet["Budgets"]))
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
             self.manager.current = "MenuScreen"
@@ -117,7 +121,6 @@ class LoginScreen(Screen):
         
         #return a pop up with Error message if failed
         else:
-            print(response)
             cb = BubbleButton(text=f"{response['Error']}\n\n\n\n   Close")
             pu = Popup(title="LoginError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
