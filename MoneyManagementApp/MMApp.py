@@ -69,7 +69,6 @@ class RegistrationScreen(Screen):
                 f.write(response['pubkey'])
             for w in self.ids.values():
                 w.text = ""
-            print(data)
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
             self.manager.current = "LoginScreen"
@@ -86,8 +85,8 @@ class RegistrationScreen(Screen):
 #Login Screen
 class LoginScreen(Screen):
     def login(self, app):
-        #encrypt password
-        packet = encrypt_packet(self.ids.text, user = self.ids['username'].text)
+        #encrypt packet
+        packet = encrypt_packet({i:v.text for i,v in self.ids.items()}, user = self.ids['username'].text)
         packet["USER"] = self.ids['username'].text
         #request to API for credential confirmation
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
