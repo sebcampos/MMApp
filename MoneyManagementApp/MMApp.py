@@ -60,14 +60,11 @@ class RegistrationScreen(Screen):
         if "Success" in response.keys():
             print(response)
             data = decrypt_packet(response)
-            print(data.keys())
-            #app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
-            #app.user_id = response["id"]
-            # with open("UserID","w") as f:
-            #     f.write(response["id"])
-            
-            print("this far")
-
+            print(data)
+            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
+            app.user_id = response["id"]
+            with open("UserID","w") as f:
+                f.write(response["id"])
             for w in self.ids.values():
                 w.text = ""
             self.manager.transition.direction = "left"
