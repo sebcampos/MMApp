@@ -19,10 +19,9 @@ kivy.require('2.0.0')
 #Config files located on iOS = <HOME_DIRECTORY>/Documents/.kivy/config.ini
 # os.environ['KIVY_EVENTLOOP'] = 'asyncio'
 
-
 #User class
 class User():
-    def __init__(self, user_id, phone_number, password, email, username):
+    def __init__(self, user_id, phone_number, email, username):
         self.user_id = user_id
         self.username = username
         self.email = email
@@ -31,8 +30,7 @@ class User():
         self.dataframe = pandas.DataFrame({
             "user_id": [self.user_id],
             "username": [self.username],
-            "user_email": [self.email],
-            "user_password": [self.password],
+            "user_email": [self.email], 
             "phone_number": [self.phone_number]
         })
          
@@ -58,13 +56,18 @@ class RegistrationScreen(Screen):
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
-            print(response)
             data = decrypt_packet(response)
-            print(data)
-            app.user = User(response["id"], user_data_dict["username"],  user_data_dict["email"], user_data_dict["phone_number"])
+            app.user = User(response["id"], user_data_dict["phone_number"], user_data_dict["username"],  user_data_dict["email"], )
             app.user_id = response["id"]
+            #save user id
             with open("UserID","w") as f:
                 f.write(response["id"])
+            #save user privkey
+            with open(f"{user_data_dict['username']}_privkey", "w") as f:
+                f.write(response['privkey'])
+            #save user pubkey
+            with open(f"{user_data_dict['username']}_pubkey", "w") as f:
+                f.write(response['pubkey'])
             for w in self.ids.values():
                 w.text = ""
             self.manager.transition.direction = "left"
