@@ -39,6 +39,14 @@ class User():
 #Registration Screen
 class RegistrationScreen(Screen):
     def register(self, app):
+        #check password length
+        if len(self.ids["password"].text) <= 8:
+            cb = BubbleButton(text="Passwords must be longer than 8 characters\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return 
+
         #check if user entered password matches confirmation input
         if self.ids["password"].text != self.ids["confirmation"].text:
             cb = BubbleButton(text="Passwords do not match\n\n\n\n   Close")
@@ -92,6 +100,7 @@ class LoginScreen(Screen):
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
+        print(response)
         
         #if Successfull collect user data
         if "Success" in response.keys():
