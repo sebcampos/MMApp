@@ -87,7 +87,7 @@ class RegistrationScreen(Screen):
 class LoginScreen(Screen):
     def login(self, app):
         #encrypt password
-        packet = encryption(self.ids["password"].text, pubkey=f"{self.ids['username'].text}_pubkey", pubkey=f"{self.ids['username'].text}_privkey")
+        packet = encrypt_packet(self.ids["password"].text, pubkey=f"{self.ids['username'].text}_pubkey", privkey=f"{self.ids['username'].text}_privkey")
         packet["USER"] = self.ids['username'].text
         #request to API for credential confirmation
         req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
