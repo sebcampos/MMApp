@@ -69,9 +69,10 @@ class RegistrationScreen(Screen):
                 f.write(response['pubkey'])
             for w in self.ids.values():
                 w.text = ""
+            print(data)
             self.manager.transition.direction = "left"
             self.manager.transition.duration = 1
-            self.manager.current = "MenuScreen"
+            self.manager.current = "LoginScreen"
         #if Unsuccessfull return Registration error message popup
         else:
             cb = BubbleButton(text="User Name Already Exists\n\n\n\n   Close")
@@ -86,14 +87,10 @@ class RegistrationScreen(Screen):
 class LoginScreen(Screen):
     def login(self, app):
         #encrypt password
-        password = encryption(self.ids["password"].text)
-
+        packet = encryption(self.ids["password"].text, pubkey=f"{self.ids['username'].text}_pubkey", pubkey=f"{self.ids['username'].text}_privkey")
+        packet["USER"] = self.ids['username'].text
         #request to API for credential confirmation
-        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps({
-            "username":self.ids["username"].text,
-            "password": password,
-            "user_id": app.user_id
-            }), on_progress=self.animation, timeout=10)
+        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
         req.wait()
         response = json.loads(req.result)
         
