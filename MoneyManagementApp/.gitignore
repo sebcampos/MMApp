@@ -3,3 +3,5 @@ credentials.py
 UserID
 pubkey
 privkey
+*_privkey
+*_pubkey
