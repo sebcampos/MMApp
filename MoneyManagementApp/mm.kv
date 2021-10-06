@@ -189,31 +189,31 @@
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "ID"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Date"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Amount"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Loc"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Type"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Tag"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Wallet"
-                on_press: root.sort_table(self)
+                on_press: root.sort_table(self, app)
         ScrollView:
             bar_inactive_color: (1, 1, 1, 1)
             scroll_type: ["bars"]
@@ -322,7 +322,7 @@
             
             TextInput:
                 id: wallet
-                text: 'No Wallet'
+                text: 'Standard Wallet'
                 multiline: False
                 halign: "center"
             Label:

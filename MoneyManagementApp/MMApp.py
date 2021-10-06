@@ -58,7 +58,7 @@ class RegistrationScreen(Screen):
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
-        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10)
+        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
         req.wait()
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
@@ -99,8 +99,13 @@ class LoginScreen(Screen):
         packet["USER"] = user
         with open("UserID", "r") as f:
             packet["USERID"] = f.read()
+
+        app.user_id = packet["USERID"]
+        app.user_password = self.ids['password'].text
+        app.user_name = self.ids['username'].text
+        
         #request to API for credential confirmation
-        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10)
+        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
         req.wait()
         packet = json.loads(req.result)
         
@@ -139,6 +144,9 @@ class LoginScreen(Screen):
 class MenuScreen(Screen):
     def log_out(self, app):
         app.user = False
+        app.user_name = False
+        app.user_id = False
+        app.user_password = False
         self.manager.transition.direction = "right"
         self.manager.transition.duration = 1
         self.manager.current = "LoginScreen"
@@ -169,25 +177,25 @@ class TransactionsScreen(Screen):
         
         #clear the widgets on gl in case there are any currently existing
         gl.clear_widgets()
-
+        gl.size_hint_y = len(app.transactions)
         #iterate over the transactions dataframe and add values to the kivy Gridlayout object
         for row in app.transactions.values:
-            gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+            gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
             for cell in row[1:]:
                 gl.add_widget(Label(text=str(cell)))
 
     #sort table on screen based on button/columns
-    def sort_table(self, button):
+    def sort_table(self, button, app):
         #load the GridLayout object
         gl = self.ids["gl"]
         
         #clear the current widgets on gl
         gl.clear_widgets()
-
+        gl.size_hint_y = len(app.transactions)
         #if the button state is in decending sort column values in ascending order
         if self.column_states[button.text] == "descending": 
             for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
                 for cell in row[1:]:
                     gl.add_widget(Label(text=str(cell)))
             #set new state to ascending
@@ -197,7 +205,7 @@ class TransactionsScreen(Screen):
         #if the button state is in ascending sort column values in decending order
         elif self.column_states[button.text] == "ascending": 
             for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=False).values:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction(*args)))
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
                 for cell in row[1:]:
                     gl.add_widget(Label(text=str(cell)))
             #set new state to descending                    
@@ -209,7 +217,7 @@ class TransactionsScreen(Screen):
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "ViewTransactionScreen"
-        self.manager.get_screen("ViewTransactionScreen").populate_screen(self.transactions, button.text)
+        self.manager.get_screen("ViewTransactionScreen").populate_screen(self.transactions, button)
         
 
 class ViewTransactionScreen(Screen):
@@ -227,7 +235,53 @@ class AddTransactionScreen(Screen):
         return f"{datetime.datetime.now().date()}"
     #add transaction to current table(s) and update table(s) over API
     def add_transaction(self, app):
-        pass
+        data = {i:v.text for i,v in self.ids.items() if i != "dropdown"}
+        data["user_id"] = app.user_id
+        data["user_password"] = app.user_password
+        content = data.copy()
+        content = encrypt_packet(content, app.user_name)
+        content["update"] = "add transaction"
+        content["user_name"] = app.user_name
+        #send json data as encrypted bytes
+        req = UrlRequest(f"http://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(content), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req.wait()
+        response = json.loads(req.result)
+        if "Success" in response.keys():
+            transaction_id = len(app.transactions)
+            df = pandas.DataFrame({
+			"transaction_id": [int(transaction_id)],
+			"transaction_date": [data["date"]],
+			"amount": [data["amount"]],
+			"location": [data["location"]],
+			"transaction_type": [data["transaction_type"]],
+			"transaction_tag": [data["tag"]],
+			"wallet_name": [data["wallet"]]
+		    })
+
+            app.transactions = pandas.concat([app.transactions, df])
+
+            print(app.transactions)
+
+            #subtract from wallet
+            if content["transaction_type"] == "Withdrawl":
+                app.wallets.loc[wallets.wallet_name == content["wallet"], "wallet_amount"] -= int(content["amount"])
+            #add to wallet
+            elif content["transaction_type"] == "Deposit":
+                app.wallets.loc[wallets.wallet_name == content["wallet"], "wallet_amount"] += int(content["amount"])
+            
+            cb = BubbleButton(text="Transaction Added\n\n\n\n   Close")
+            pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            
+            return
+
+
+    
+    def animation(*argsv):
+        print(argsv)
+
+
         
 
 
