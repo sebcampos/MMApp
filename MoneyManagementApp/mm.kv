@@ -350,7 +350,14 @@
                     root.add_transaction(app)
 
 
-<ViewTransactionScreen>    
+<ViewTransactionScreen>
+    transaction_id: transaction_id.__self__
+    date: date.__self__
+    amount: amount.__self__
+    location: location.__self__
+    type: type.__self__
+    tag: tag.__self__
+    wallet: wallet.__self__
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -365,26 +372,32 @@
             Label:
                 text: "Date"
             Label:
+                id: date
                 text: ""
             Label:
                 text: "Amount"
             Label:
+                id: amount
                 text: ""
             Label:
                 text: "Location"
             Label:
+                id: location
                 text: ""
             Label:
                 text: "Type"
             Label:
+                id: type
                 text: ""
             Label:
                 text: "Tag"
             Label:
+                id: tag
                 text: ""
             Label:
                 text: "Wallet"
             Label:
+                id: wallet
                 text: ""
         BoxLayout:
             orientation: "horizontal"
@@ -399,12 +412,12 @@
                 background_color: (4, 0, 100, 5)
                 text: "Schedule Transaction"
                 on_press:
-                    root.schedule_transaction()
+                    root.schedule_transaction(app)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Delete"
                 on_press:
-                    root.delete_transaction(app, transaction_id.text)
+                    root.delete_transaction(app)
 
 <ScheduleScreen>
     on_enter:

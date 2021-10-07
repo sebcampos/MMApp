@@ -214,19 +214,55 @@ class TransactionsScreen(Screen):
     
     #load a transaction and transition screen when clicked
     def load_transaction(self, button):
+        self.manager.get_screen("ViewTransactionScreen").populate_screen(button.text, self.transactions)
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "ViewTransactionScreen"
-        self.manager.get_screen("ViewTransactionScreen").populate_screen(self.transactions, button)
         
 
 class ViewTransactionScreen(Screen):
-    def populate_screen(self, transactions_df, transaction_id):
-        pass
+    def populate_screen(self, button, transactions):
+        df = transactions.loc[transactions.transaction_id == int(button)]
+        self.ids["transaction_id"].text = str(df.transaction_id.item())
+        self.ids["date"].text = str(df.transaction_date.item())
+        self.ids["amount"].text = str(df.amount.item())
+        self.ids["location"].text = str(df.location.item())
+        self.ids["type"].text = str(df.transaction_type.item())
+        self.ids["tag"].text = str(df.transaction_tag.item())
+        self.ids["wallet"].text = str(df.wallet_name.item())
+        
     
-    def delete_transaction(self):
-        ## Delete from all tables ##
-        pass
+    def delete_transaction(self, app):
+        #collect transaction_id, wallet name, amount 
+        data = {
+            "transaction_id": self.ids["transaction_id"].text,
+            "wallet_name": self.ids["wallet"].text,
+            "amount": self.ids["amount"].text,
+            "user_id": str(app.user_id),
+            "user_password": str(app.user_password),
+            "transaction_type": self.ids["type"].text
+        }
+        #create a copy of the data
+        packet = data.copy()
+        #send encrypted packet
+        packet = encrypt_packet(packet, user=app.user_name)
+        packet["user_name"] = app.user_name
+        packet["update"] = "delete transaction"
+        req = UrlRequest(f"http://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req.wait()
+        packet = json.loads(req.result)
+        if "Success" in response.keys():
+            #drop row from dataframe
+            app.transactions.drop(data["transaction_id"], inplace=True)
+            #decrement all ids greater than current by 1
+            app.transactions.loc[app.transactions.transaction_id > data["transaction_id"], "transaction_id"] -= 1
+            #return reverse transaction from wallet
+            if data["transaction_type"] == "Withdrawl":
+                #if withdrawl deleted return the amount to the wallet
+                app.wallets.loc[app.wallets.wallet_name == data["wallet_name"], "wallet_amount"] += float(data["amount"])
+            elif data["transaction_type"] == "Deposit":
+                #if deposit deleted subtract amount from wallet
+                app.wallets.loc[app.wallets.wallet_name == data["wallet_name"], "wallet_amount"] += float(data["amount"])
 
 
 class AddTransactionScreen(Screen):
@@ -251,16 +287,15 @@ class AddTransactionScreen(Screen):
             df = pandas.DataFrame({
 			"transaction_id": [int(transaction_id)],
 			"transaction_date": [data["date"]],
-			"amount": [data["amount"]],
+			"amount": [float(data["amount"])],
 			"location": [data["location"]],
 			"transaction_type": [data["transaction_type"]],
 			"transaction_tag": [data["tag"]],
 			"wallet_name": [data["wallet"]]
 		    })
 
+            #add to transaction table
             app.transactions = pandas.concat([app.transactions, df])
-
-            print(app.transactions)
 
             #subtract from wallet
             if content["transaction_type"] == "Withdrawl":
