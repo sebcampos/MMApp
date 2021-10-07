@@ -254,7 +254,8 @@
     tag: tag.__self__
     wallet: wallet.__self__
     freq: freq.__self__
-
+    on_enter:
+        root.today_timestamp()
     dropdown: dropdown.__self__
     BoxLayout:
         orientation: 'vertical'
@@ -276,7 +277,6 @@
             TextInput:
                 id: date
 	            multiline: False
-                text: root.today_timestamp()
                 halign: "center"
             
             Label:

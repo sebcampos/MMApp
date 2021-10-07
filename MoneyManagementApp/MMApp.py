@@ -58,7 +58,7 @@ class RegistrationScreen(Screen):
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
-        req = UrlRequest(f"http://{end_point_address}/register_user", req_headers={'Content-type': 'application/octet-stream'}, req_body=data, on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req = UrlRequest(f"https://{end_point_address}/register_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data, on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
         req.wait()
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
@@ -105,7 +105,7 @@ class LoginScreen(Screen):
         app.user_name = self.ids['username'].text
         
         #request to API for credential confirmation
-        req = UrlRequest(f"http://{end_point_address}/login_user", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req = UrlRequest(f"https://{end_point_address}/login_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
         req.wait()
         packet = json.loads(req.result)
         
@@ -248,7 +248,7 @@ class ViewTransactionScreen(Screen):
         packet = encrypt_packet(packet, user=app.user_name)
         packet["user_name"] = app.user_name
         packet["update"] = "delete transaction"
-        req = UrlRequest(f"http://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req = UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
         req.wait()
         packet = json.loads(req.result)
         if "Success" in packet.keys():
@@ -285,7 +285,7 @@ class ViewTransactionScreen(Screen):
 class AddTransactionScreen(Screen):
     #today timestamp
     def today_timestamp(self):
-        return f"{datetime.datetime.now().date()}"
+        self.ids["date"].text = f"{datetime.datetime.now().date()}"
     #add transaction to current table(s) and update table(s) over API
     def add_transaction(self, app):
         data = {i:v.text for i,v in self.ids.items() if i != "dropdown"}
@@ -296,7 +296,7 @@ class AddTransactionScreen(Screen):
         content["update"] = "add transaction"
         content["user_name"] = app.user_name
         #send json data as encrypted bytes
-        req = UrlRequest(f"http://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(content), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
+        req = UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
         req.wait()
         response = json.loads(req.result)
         if "Success" in response.keys():
@@ -313,6 +313,7 @@ class AddTransactionScreen(Screen):
 
             #add to transaction table
             app.transactions = pandas.concat([app.transactions, df])
+            app.transactions.reset_index(inplace=True)
 
             #subtract from wallet
             if content["transaction_type"] == "Withdrawl":
