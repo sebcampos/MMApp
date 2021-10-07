@@ -1,4 +1,3 @@
-#!/usr/local/bin/python3
 import os 
 import pandas
 import datetime
@@ -93,6 +92,7 @@ class RegistrationScreen(Screen):
 #Login Screen
 class LoginScreen(Screen):
     def login(self, app):
+
         user = self.ids['username'].text
         #encrypt packet
         packet = encrypt_packet({i:v.text for i,v in self.ids.items()}, user = self.ids['username'].text)
@@ -177,7 +177,7 @@ class TransactionsScreen(Screen):
         
         #clear the widgets on gl in case there are any currently existing
         gl.clear_widgets()
-        gl.size_hint_y = len(app.transactions)
+        gl.size_hint_y = len(app.transactions) / 2.5
         #iterate over the transactions dataframe and add values to the kivy Gridlayout object
         for row in app.transactions.values:
             gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
@@ -191,12 +191,12 @@ class TransactionsScreen(Screen):
         
         #clear the current widgets on gl
         gl.clear_widgets()
-        gl.size_hint_y = len(app.transactions)
+        gl.size_hint_y = len(app.transactions) / 2.5
         #if the button state is in decending sort column values in ascending order
         if self.column_states[button.text] == "descending": 
             for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-                for cell in row[1:]:
+                gl.add_widget(BubbleButton(text=str(row[1]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+                for cell in row[2:]:
                     gl.add_widget(Label(text=str(cell)))
             #set new state to ascending
             self.column_states[button.text] = "ascending"
@@ -313,7 +313,7 @@ class AddTransactionScreen(Screen):
 
             #add to transaction table
             app.transactions = pandas.concat([app.transactions, df])
-            app.transactions.reset_index(inplace=True)
+            app.transactions.reset_index(inplace=True, drop=True)
 
             #subtract from wallet
             if content["transaction_type"] == "Withdrawl":
