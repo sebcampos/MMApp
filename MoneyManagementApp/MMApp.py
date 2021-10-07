@@ -251,11 +251,11 @@ class ViewTransactionScreen(Screen):
         req = UrlRequest(f"http://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json'}, req_body=json.dumps(packet), on_progress=self.animation, timeout=10, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y))
         req.wait()
         packet = json.loads(req.result)
-        if "Success" in response.keys():
+        if "Success" in packet.keys():
             #drop row from dataframe
-            app.transactions.drop(data["transaction_id"], inplace=True)
+            app.transactions.drop(app.transactions.loc[app.transactions.transaction_id == int(data["transaction_id"])].index, inplace=True)
             #decrement all ids greater than current by 1
-            app.transactions.loc[app.transactions.transaction_id > data["transaction_id"], "transaction_id"] -= 1
+            app.transactions.loc[app.transactions.transaction_id > int(data["transaction_id"]), "transaction_id"] -= 1
             #return reverse transaction from wallet
             if data["transaction_type"] == "Withdrawl":
                 #if withdrawl deleted return the amount to the wallet
@@ -263,7 +263,24 @@ class ViewTransactionScreen(Screen):
             elif data["transaction_type"] == "Deposit":
                 #if deposit deleted subtract amount from wallet
                 app.wallets.loc[app.wallets.wallet_name == data["wallet_name"], "wallet_amount"] += float(data["amount"])
-
+            
+            #clear screen
+            for widget in self.ids.values():
+                widget.text = ""
+            
+            #return result
+            cb = BubbleButton(text="Transaction Deleted\n\n\n\n   Close")
+            pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+        else:
+            cb = BubbleButton(text="Something went wrong\n\n\n\n   Close")
+            pu = Popup(title="DeleteError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+    def animation(*argsv):
+        print(argsv)
 
 class AddTransactionScreen(Screen):
     #today timestamp
@@ -304,6 +321,12 @@ class AddTransactionScreen(Screen):
             elif content["transaction_type"] == "Deposit":
                 app.wallets.loc[wallets.wallet_name == content["wallet"], "wallet_amount"] += int(content["amount"])
             
+            #clear screen
+            for i,v in self.ids.items():
+                if i != "transaction_type":
+                    v.text = ""
+
+
             cb = BubbleButton(text="Transaction Added\n\n\n\n   Close")
             pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
