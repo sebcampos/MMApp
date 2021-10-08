@@ -283,6 +283,14 @@ class ViewTransactionScreen(Screen):
         print(argsv)
 
 class AddTransactionScreen(Screen):
+    #build calender
+    def build_calender(self, app):
+        cb = ScheduleScreen()
+        cb.load_mini_schedule(app)
+        pu = Popup(title="Calender", content=cb, size_hint=(.7, .7))
+        #cb.bind(on_press=pu.dismiss)
+        pu.open()
+
     #today timestamp
     def today_timestamp(self):
         self.ids["date"].text = f"{datetime.datetime.now().date()}"
@@ -341,11 +349,138 @@ class AddTransactionScreen(Screen):
         print(argsv)
 
 
-        
+class ScheduleScreen(Screen):
+    def load_mini_schedule(self, app):
+        pass
+    
+    def clear_calender(self):
+        self.ids['gl'].clear_widgets()
+    def load_schedule(self, app, new_month=False):
+        #collect todays date
+        today = datetime.datetime.now()
+        #build calender Map
+        self.calender= {
+            "1": "Jan",
+            "2": "Feb",
+            "3": "Mar",
+            "4": "Apr",
+            "5": "May",
+            "6": "Jun",
+            "7": "Jul",
+            "8": "Aug",
+            "9": "Sep",
+            "10": "Oct",
+            "11": "Nov",
+            "12": "Dec"
+        }
+        #build weekdays list
+        ordered_weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        self.schedule = app.schedule
+        self.year = today.year
+        self.ids['year_label'].text = str(self.year)
+        self.ids['current_month'].text = self.calender[str(today.month)]
+        #if new_month is True user new month to populate calender 
+        if new_month != False:
+            self.year = int(new_month["year"])
+            if new_month["month"] == 12 or new_month["month"] == 13:
+                new_month["month"] = 12
+                days_in_month = (datetime.date(new_month["year"], 2, 1) - datetime.date(new_month["year"], 1, 1)).days
+            elif new_month["month"] == 1 or new_month["month"] == 0:
+                new_month["month"] = 12
+                days_in_month = (datetime.date(new_month["year"] + 1, 1, 1) - datetime.date(new_month["year"], 12, 1)).days
+            else:
+                days_in_month = (datetime.date(new_month["year"], new_month["month"] + 1, 1) - datetime.date(new_month["year"], new_month["month"], 1)).days
+            year = new_month["year"]
+            month = new_month["month"]
+            self.ids['year_label'].text = str(year)
+            self.ids['current_month'].text = self.calender[str(month)]
+        else:
+            #collect days in current month
+            days_in_month = (datetime.date(today.year, today.month + 1, 1) - datetime.date(today.year, today.month, 1)).days
+            year = today.year
+            month = today.month
+        #create a dictionary for calender weekdays related to current month
+        dict_calender={}
+        for i in range(1,8):
+            dict_calender[f'{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][datetime.date(year, month, i).weekday()]}'] = []
+        #add related dates to related weekdays
+        for i,v in zip(list(dict_calender.keys()) * (days_in_month//len(dict_calender.keys()) + 1) , [x for x in range(1,days_in_month+1)]):
+            dict_calender[i].append(v)
+        #find the first of the month
+        first_of_month = [i for i,v in dict_calender.items() if 1 in v][0]
+        #add padding to weekdays before the first of the month
+        for i in ordered_weekdays:
+            if i == first_of_month:
+                break
+            dict_calender[i] = [""] + dict_calender[i]
+        #add padding after last day of the month
+        max_len = max([len(i) for i in dict_calender.values()])
+        for v in dict_calender.values():
+            while len(v) != max_len:
+                v.append("")
+        #create a dataframe        
+        df = pandas.DataFrame(dict_calender)
+        #order days sunday - saturday
+        df = df[["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]]
+        #iterate over dataframe and add to gridlayout widget
+        for column in df.columns:
+            self.ids['gl'].add_widget(Label(text=column))
+        for row in df.values:
+            for cell in row:
+                if len(str(month)) == 1:
+                    month = f"0{month}"
+                else:
+                    month = month
+                if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) or f"{year}-{month}-0{cell}" in list(self.schedule["scheduled_date"]):
+                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                    bb.background_normal = ""
+                    bb.background_color=  (.4, .5, 100, .3)
+                elif cell == "":
+                    self.ids['gl'].add_widget(Label(text=""))
+                
+                else:
+                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                    bb.halign = "center"
+                    bb.valign = "middle"
+                    bb.text_size = (20,20)
+                    self.ids['gl'].add_widget(bb)
+        self.selected_month = int(month)
+   
+    def view_day(self, button):
+        self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, button.text, self.transactions_df)
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "DayScreen"
 
+    def change_month(self, button, app):
+        print('clicked')
+        current_month = int([i for i,v in self.calender.items() if v == self.ids["current_month"].text][0])
 
+        if button.text == "<":
+            current_month -= 1
+            if current_month == 1 or current_month == 0:
+                self.year -= 1
+                self.ids["year_label"].text = str(self.year)
+                self.ids["current_month"].text = self.calender["12"]
+            else:
+                self.ids["current_month"].text = self.calender[str(current_month)]
 
-
+        elif button.text == ">":
+            current_month += 1
+            if current_month == 13:
+                current_month = 1
+                self.year += 1
+                self.ids["year_label"].text = str(self.year)
+                self.ids["current_month"].text = self.calender[str(current_month)]                
+            else:
+                self.ids["current_month"].text = self.calender[str(current_month)]
+        self.selected_month = current_month
+        #clear the calender
+        self.clear_calender()
+        #load the new months data
+        print(current_month)
+        print(self.year)
+        self.load_schedule(app, new_month={"year":self.year, "month": current_month})
 
 
 
@@ -368,7 +503,7 @@ class MMApp(App):
         self.sm.add_widget(TransactionsScreen(name="TransactionsScreen"))
         self.sm.add_widget(AddTransactionScreen(name="AddTransactionScreen"))
         self.sm.add_widget(ViewTransactionScreen(name="ViewTransactionScreen"))
-        # self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
+        self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
         # self.sm.add_widget(DayScreen(name="DayScreen"))
         # self.sm.add_widget(BudgetScreen(name="BudgetScreen"))
         # self.sm.add_widget(WalletsScreen(name="WalletsScreen"))

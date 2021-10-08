@@ -253,10 +253,10 @@
     amount: amount.__self__
     tag: tag.__self__
     wallet: wallet.__self__
-    freq: freq.__self__
+    calender: calender.__self__
+    dropdown: dropdown.__self__
     on_enter:
         root.today_timestamp()
-    dropdown: dropdown.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -328,11 +328,11 @@
             Label:
                 text: 'Frequency'
             
-            TextInput:
-                id: freq
-                text: 'Days'
-                multiline: False
-                halign: "center"                
+            Button:
+                id: calender
+                text: 'Schedule'
+                on_press: root.build_calender(app)
+
                                 
         BoxLayout:
             orientation: 'horizontal'
@@ -420,15 +420,20 @@
                     root.delete_transaction(app)
 
 <ScheduleScreen>
+    schedule_label: schedule_label.__self__
+    year_label: year_label.__self__
+    gl: gl.__self__
+    current_month: current_month.__self__
     on_enter:
         root.clear_calender()
         root.load_schedule(app)
     BoxLayout:
         orientation: 'vertical'
         Label:
+            id: schedule_label
             text: 'Schedule'
         Label:
-            text: 'Year'
+            id: year_label
             size_hint: (.001, .001)
             pos_hint: {'x':.5 , 'y': .5}
         BoxLayout:
@@ -436,15 +441,16 @@
             BubbleButton: 
                 text: "<"
                 on_press:
-                    root.change_month(self)
+                    root.change_month(self, app)
             Label:
                 id: current_month
                 text: ""
             BubbleButton:
                 text: ">"
                 on_press:
-                    root.change_month(self)
+                    root.change_month(self, app)
         GridLayout:
+            id: gl
             cols: 7
         BubbleButton:
             background_color: (4, 0, 100, 5)
@@ -453,6 +459,8 @@
                 root.manager.transition.direction = "right"
                 root.manager.transition.duration = 1
                 root.manager.current = "MenuScreen"
+
+
 <DayScreen>
     BoxLayout:
         orientation: "vertical"
@@ -656,7 +664,4 @@
                     root.manager.transition.duration = 1
                     root.manager.current = "MenuScreen"
 
-            
-
-
-
+        
