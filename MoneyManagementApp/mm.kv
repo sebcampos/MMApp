@@ -238,13 +238,6 @@
                     root.manager.transition.direction = "right"
                     root.manager.transition.duration = 1
                     root.manager.current = "MenuScreen"
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: "Schedule"
-                on_press:
-                    root.manager.transition.direction = "up"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "ScheduleScreen"
         
 <AddTransactionScreen>
     transaction_type: transaction_type.__self__
@@ -424,10 +417,13 @@
     year_label: year_label.__self__
     gl: gl.__self__
     current_month: current_month.__self__
+    dynamic_button: dynamic_button.__self__
+    bl: bl.__self__
     on_enter:
         root.clear_calender()
         root.load_schedule(app)
     BoxLayout:
+        id: bl
         orientation: 'vertical'
         Label:
             id: schedule_label
@@ -453,6 +449,7 @@
             id: gl
             cols: 7
         BubbleButton:
+            id: dynamic_button
             background_color: (4, 0, 100, 5)
             text: "Return To Menu"
             on_press:

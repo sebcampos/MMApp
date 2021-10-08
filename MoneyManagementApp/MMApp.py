@@ -57,7 +57,7 @@ class RegistrationScreen(Screen):
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
-        req = UrlRequest(f"https://{end_point_address}/register_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data, on_progress=self.animation, timeout=25, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
+        req = UrlRequest(f"https://{end_point_address}/register_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data, on_progress=self.animation, timeout=25, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
         req.wait()
         response = json.loads(req.result)
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
@@ -86,6 +86,12 @@ class RegistrationScreen(Screen):
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
+    def error(error_message):
+            cb = BubbleButton(text=f"{error_message}\n\n\n\n   Close")
+            pu = Popup(title="RegistrationError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+
     def animation(*argsv):
         print(argsv)
 
@@ -126,7 +132,7 @@ class LoginScreen(Screen):
         
         #return a pop up with Error message if failed
         else:
-            cb = BubbleButton(text=f"{response['Error']}\n\n\n\n   Close")
+            cb = BubbleButton(text=f"{packet['Error']}\n\n\n\n   Close")
             pu = Popup(title="LoginError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
@@ -285,10 +291,12 @@ class ViewTransactionScreen(Screen):
 class AddTransactionScreen(Screen):
     #build calender
     def build_calender(self, app):
-        cb = ScheduleScreen()
-        cb.load_mini_schedule(app)
-        pu = Popup(title="Calender", content=cb, size_hint=(.7, .7))
-        #cb.bind(on_press=pu.dismiss)
+        sc = ScheduleScreen()
+        sc.load_schedule(app, mini=True)
+        pu = Popup(title="Calender", content=sc, size_hint=(.7, .7))
+        bb = BubbleButton(text="Close", on_press=pu.dismiss)
+        sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
+        sc.ids["bl"].add_widget(bb)
         pu.open()
 
     #today timestamp
@@ -349,13 +357,10 @@ class AddTransactionScreen(Screen):
         print(argsv)
 
 
-class ScheduleScreen(Screen):
-    def load_mini_schedule(self, app):
-        pass
-    
+class ScheduleScreen(Screen):    
     def clear_calender(self):
         self.ids['gl'].clear_widgets()
-    def load_schedule(self, app, new_month=False):
+    def load_schedule(self, app, new_month=False, mini=False):
         #collect todays date
         today = datetime.datetime.now()
         #build calender Map
@@ -376,29 +381,31 @@ class ScheduleScreen(Screen):
         #build weekdays list
         ordered_weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         self.schedule = app.schedule
-        self.year = today.year
-        self.ids['year_label'].text = str(self.year)
-        self.ids['current_month'].text = self.calender[str(today.month)]
         #if new_month is True user new month to populate calender 
         if new_month != False:
-            self.year = int(new_month["year"])
-            if new_month["month"] == 12 or new_month["month"] == 13:
-                new_month["month"] = 12
-                days_in_month = (datetime.date(new_month["year"], 2, 1) - datetime.date(new_month["year"], 1, 1)).days
-            elif new_month["month"] == 1 or new_month["month"] == 0:
-                new_month["month"] = 12
+            #calculate days in month based on december month
+            if new_month["month"] == 12:
+                days_in_month = (datetime.date(self.year, 2, 1) - datetime.date(self.year, 1, 1)).days
+            #calculate days in month based on january month
+            elif new_month["month"] == 1:
                 days_in_month = (datetime.date(new_month["year"] + 1, 1, 1) - datetime.date(new_month["year"], 12, 1)).days
+            #calculate days in month based on month
             else:
                 days_in_month = (datetime.date(new_month["year"], new_month["month"] + 1, 1) - datetime.date(new_month["year"], new_month["month"], 1)).days
             year = new_month["year"]
             month = new_month["month"]
             self.ids['year_label'].text = str(year)
             self.ids['current_month'].text = self.calender[str(month)]
+        #fill values with todays date
         else:
+            self.year = today.year
+            self.ids['year_label'].text = str(self.year)
+            self.ids['current_month'].text = self.calender[str(today.month)]
             #collect days in current month
             days_in_month = (datetime.date(today.year, today.month + 1, 1) - datetime.date(today.year, today.month, 1)).days
             year = today.year
             month = today.month
+        
         #create a dictionary for calender weekdays related to current month
         dict_calender={}
         for i in range(1,8):
@@ -422,6 +429,12 @@ class ScheduleScreen(Screen):
         df = pandas.DataFrame(dict_calender)
         #order days sunday - saturday
         df = df[["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]]
+        #if mini argument has been specified
+        if mini == True:
+            df.columns = ["S","M","T","W","T","F","S"]
+            self.mini = True
+        else:
+            self.mini = False
         #iterate over dataframe and add to gridlayout widget
         for column in df.columns:
             self.ids['gl'].add_widget(Label(text=column))
@@ -453,35 +466,38 @@ class ScheduleScreen(Screen):
         self.manager.current = "DayScreen"
 
     def change_month(self, button, app):
-        print('clicked')
+        #collect current month
         current_month = int([i for i,v in self.calender.items() if v == self.ids["current_month"].text][0])
-
+        #logic to decrement month
         if button.text == "<":
-            current_month -= 1
-            if current_month == 1 or current_month == 0:
+            #logic to decrement month based on january
+            if current_month == 1:
+                current_month = 12
                 self.year -= 1
                 self.ids["year_label"].text = str(self.year)
                 self.ids["current_month"].text = self.calender["12"]
             else:
+                current_month -= 1
                 self.ids["current_month"].text = self.calender[str(current_month)]
-
+        #logic to increment month
         elif button.text == ">":
-            current_month += 1
-            if current_month == 13:
+            #logic to increment based on december
+            if current_month == 12:
                 current_month = 1
                 self.year += 1
                 self.ids["year_label"].text = str(self.year)
                 self.ids["current_month"].text = self.calender[str(current_month)]                
             else:
+                current_month += 1
                 self.ids["current_month"].text = self.calender[str(current_month)]
         self.selected_month = current_month
         #clear the calender
         self.clear_calender()
         #load the new months data
-        print(current_month)
-        print(self.year)
-        self.load_schedule(app, new_month={"year":self.year, "month": current_month})
-
+        if self.mini == True:
+            self.load_schedule(app, new_month={"year":self.year, "month": current_month}, mini=True)
+        else:
+            self.load_schedule(app, new_month={"year":self.year, "month": current_month})
 
 
 
