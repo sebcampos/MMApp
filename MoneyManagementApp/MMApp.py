@@ -11,6 +11,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.network.urlrequest import UrlRequest 
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.button import Button
 from kivy.uix.bubble import BubbleButton
 from kivy.app import App
 
@@ -38,6 +39,14 @@ class User():
 #Registration Screen
 class RegistrationScreen(Screen):
     def register(self, app):
+        #make sure no ; exists in inputs
+        for i,v in self.ids.items():
+            if ";" in v.text:
+                cb = BubbleButton(text="Inputs cannot contain ';' character\n\n\n\n   Close")
+                pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+                cb.bind(on_press=pu.dismiss)
+                pu.open()
+                return
         #check password length
         if len(self.ids["password"].text) <= 8:
             cb = BubbleButton(text="Passwords must be longer than 8 characters\n\n\n\n   Close")
@@ -57,9 +66,9 @@ class RegistrationScreen(Screen):
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
-        req = UrlRequest(f"https://{end_point_address}/register_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data, on_progress=self.animation, timeout=25, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
-        req.wait()
-        response = json.loads(req.result)
+        UrlRequest(f"https://{end_point_address}/login_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data,on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    def success(self, req, app):
+        response = json.loads(req.result)    
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
             data = decrypt_packet(response)
@@ -86,8 +95,8 @@ class RegistrationScreen(Screen):
             cb.bind(on_press=pu.dismiss)
             pu.open()
             return
-    def error(error_message):
-            cb = BubbleButton(text=f"{error_message}\n\n\n\n   Close")
+    def error(*argsv):
+            cb = BubbleButton(text=f"{argsv[-1]}\n\n\n\n   Close")
             pu = Popup(title="RegistrationError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
@@ -98,7 +107,6 @@ class RegistrationScreen(Screen):
 #Login Screen
 class LoginScreen(Screen):
     def login(self, app):
-
         user = self.ids['username'].text
         #encrypt packet
         packet = encrypt_packet({i:v.text for i,v in self.ids.items()}, user = self.ids['username'].text)
@@ -111,11 +119,12 @@ class LoginScreen(Screen):
         app.user_name = self.ids['username'].text
         
         #request to API for credential confirmation
-        req = UrlRequest(f"https://{end_point_address}/login_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_progress=self.animation, timeout=25, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
-        req.wait()
-        packet = json.loads(req.result)
-        
+        UrlRequest(f"https://{end_point_address}/login_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet),on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    
+    def success(self,req,app):
         #if Successfull collect user data
+        user = self.ids['username'].text
+        packet = json.loads(req)
         if "Success" in packet.keys():
             del packet["Success"]
             packet = decrypt_packet(packet, user = user)
@@ -141,11 +150,14 @@ class LoginScreen(Screen):
     def animation(*argsv):
         print(argsv)
 
+    def error(*argsv):
+            cb = BubbleButton(text=f"{argsv[-1]}\n\n\n\n   Close")
+            pu = Popup(title="LoginError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+
     def reset_password(self):
         pass
-
-
-
 
 class MenuScreen(Screen):
     def log_out(self, app):
@@ -225,7 +237,6 @@ class TransactionsScreen(Screen):
         self.manager.transition.duration = 1
         self.manager.current = "ViewTransactionScreen"
         
-
 class ViewTransactionScreen(Screen):
     def populate_screen(self, button, transactions):
         df = transactions.loc[transactions.transaction_id == int(button)]
@@ -254,8 +265,9 @@ class ViewTransactionScreen(Screen):
         packet = encrypt_packet(packet, user=app.user_name)
         packet["user_name"] = app.user_name
         packet["update"] = "delete transaction"
-        req = UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_progress=self.animation, timeout=25, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
-        req.wait()
+        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    #function called after successfull https request
+    def success(self, req, app):
         packet = json.loads(req.result)
         if "Success" in packet.keys():
             #drop row from dataframe
@@ -285,6 +297,12 @@ class ViewTransactionScreen(Screen):
             pu = Popup(title="DeleteError", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
             pu.open()
+    #Url request error
+    def error(*argsv):
+            cb = BubbleButton(text=f"{argsv[-1]}\n\n\n\n   Close")
+            pu = Popup(title="APIError `delete_transaction`", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
     def animation(*argsv):
         print(argsv)
 
@@ -294,17 +312,32 @@ class AddTransactionScreen(Screen):
         sc = ScheduleScreen()
         sc.load_schedule(app, mini=True)
         pu = Popup(title="Calender", content=sc, size_hint=(.7, .7))
-        bb = BubbleButton(text="Close", on_press=pu.dismiss)
+        self.pu = pu
+        bb = BubbleButton(text="Close", on_press=self.pu.dismiss)
         sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
         sc.ids["bl"].add_widget(bb)
-        pu.open()
+        self.pu.open()
 
     #today timestamp
-    def today_timestamp(self):
-        self.ids["date"].text = f"{datetime.datetime.now().date()}"
+    def build_screen(self, app):
+        self.ids["calender"].text = f"{datetime.datetime.now().date()}"
+        w = self.ids["wallet"]
+        wd = self.ids["wallet_dropdown"]
+        wd.clear_widgets()
+        for i in app.wallets["wallet_name"].tolist():
+            wd.add_widget(Button(text=f"{i}", size_hint_y=None, on_press= lambda x: wd.select(x.text)))
     #add transaction to current table(s) and update table(s) over API
     def add_transaction(self, app):
-        data = {i:v.text for i,v in self.ids.items() if i != "dropdown"}
+        data = {i:v.text for i,v in self.ids.items() if i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown"}
+        #check for sql injection
+        for i,v in data.items():
+            if ";" in v:
+                cb = BubbleButton(text="Character ';' not allowed\n\n\n\n   Close")
+                pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+                cb.bind(on_press=pu.dismiss)
+                pu.open()
+                return
+
         data["user_id"] = app.user_id
         data["user_password"] = app.user_password
         content = data.copy()
@@ -312,8 +345,8 @@ class AddTransactionScreen(Screen):
         content["update"] = "add transaction"
         content["user_name"] = app.user_name
         #send json data as encrypted bytes
-        req = UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content), on_progress=self.animation, timeout=25, on_error=lambda x,y: print("error",y), on_failure=lambda x,y: print("failure",y), verify=False)
-        req.wait()
+        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content),on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    def success(self, req, app):
         response = json.loads(req.result)
         if "Success" in response.keys():
             transaction_id = len(app.transactions)
@@ -340,9 +373,9 @@ class AddTransactionScreen(Screen):
             
             #clear screen
             for i,v in self.ids.items():
-                if i != "transaction_type":
+                if i != "transaction_type" and i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown":
                     v.text = ""
-
+            self.ids["calender"].text = "calender"
 
             cb = BubbleButton(text="Transaction Added\n\n\n\n   Close")
             pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
@@ -350,12 +383,16 @@ class AddTransactionScreen(Screen):
             pu.open()
             
             return
-
+    #Url request error
+    def error(*argsv):
+            cb = BubbleButton(text=f"{argsv[-1]}\n\n\n\n   Close")
+            pu = Popup(title="APIError `add_transaction`", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
 
     
     def animation(*argsv):
         print(argsv)
-
 
 class ScheduleScreen(Screen):    
     def clear_calender(self):
@@ -438,29 +475,53 @@ class ScheduleScreen(Screen):
         #iterate over dataframe and add to gridlayout widget
         for column in df.columns:
             self.ids['gl'].add_widget(Label(text=column))
+        
         for row in df.values:
             for cell in row:
+                #padding months and days
+                if len(str(cell)) == 1:
+                    new_cell = f"0{cell}"
+                else:
+                    new_cell = cell
                 if len(str(month)) == 1:
                     month = f"0{month}"
                 else:
                     month = month
-                if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) or f"{year}-{month}-0{cell}" in list(self.schedule["scheduled_date"]):
-                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) and self.mini == False:
+                    bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app))
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
+                    self.ids['gl'].add_widget(bb)
+
+                if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
+                    bb = BubbleButton(text=f"Today {cell}", on_press=lambda button: self.view_day(button, app=app))
+                    bb.background_normal = ""
+                    bb.background_color = (0, .5, 1, .5)
+                    self.ids['gl'].add_widget(bb)                           
+
                 elif cell == "":
                     self.ids['gl'].add_widget(Label(text=""))
                 
                 else:
-                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                    bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app, mini=self.mini))
                     bb.halign = "center"
                     bb.valign = "middle"
                     bb.text_size = (20,20)
                     self.ids['gl'].add_widget(bb)
         self.selected_month = int(month)
    
-    def view_day(self, button):
-        self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, button.text, self.transactions_df)
+    def view_day(self, button, app, mini=False):
+        if mini == True:
+            button.background_normal = ""
+            button.background_color = (0, .5, 1, 1)
+            day = button.text
+            if len(day) == 1:
+                day = f"0{day}"
+            if len(str(self.selected_month)) == 1:
+                self.selected_month = f"0{self.selected_month}"
+            app.sm.get_screen("AddTransactionScreen").ids["calender"].text = f"{self.year}-{self.selected_month}-{day}"
+            return
+        self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, button.text, app.transactions)
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "DayScreen"
@@ -499,15 +560,44 @@ class ScheduleScreen(Screen):
         else:
             self.load_schedule(app, new_month={"year":self.year, "month": current_month})
 
+class DayScreen(Screen):
+    def load_day(self, schedule, year, month, day, df):
+        self.schedule = schedule
+        self.year = year
+        self.month = month 
+        self.day = day
+        self.transactions = df
+        if len(str(self.month)) == 1:
+            self.month = f"0{self.month}"
+        if len(str(self.day)) == 1:
+            self.day = f"0{self.day}"
+        self.children[0].children[1].text = f"{year}-{month}-{day}"
+        if len(schedule) == 0:
+            return
+        self.children[0].children[-1].text = f"{self.year}-{self.month}-{self.day}"
+        gl = self.children[0].children[1]
+        day_data = schedule.loc[schedule.scheduled_date == f"{self.year}-{self.month}-{self.day}"]
+        gl.clear_widgets()
+        for row in day_data.values:
+            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_transaction))
+            for item in row[1:]:
+                gl.add_widget(Label(text=str(item)))
 
+    def find_transaction(self, button):
+        self.parent.get_screen("ViewTransactionScreen").load_transaction(button.text, self.transactions)
+        self.manager.transition.direction = "left"
+        self.manager.transition.duration = 1
+        self.manager.current = "ViewTransactionScreen"
 
-
-
-
-
-
-
-
+    def add_transaction(self):
+        if len(str(self.month)) == 1:
+            self.month = f"0{self.month}"
+        if len(str(self.day)) == 1:
+            self.day = f"0{self.day}"
+        self.manager.get_screen("AddTransactionScreen").schedule(f"{self.year}-{self.month}-{self.day}")
+        self.manager.transition.direction = "down"
+        self.manager.transition.duration = 1
+        self.manager.current = "AddTransactionScreen"
 
 
 class MMApp(App):
@@ -520,7 +610,7 @@ class MMApp(App):
         self.sm.add_widget(AddTransactionScreen(name="AddTransactionScreen"))
         self.sm.add_widget(ViewTransactionScreen(name="ViewTransactionScreen"))
         self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
-        # self.sm.add_widget(DayScreen(name="DayScreen"))
+        self.sm.add_widget(DayScreen(name="DayScreen"))
         # self.sm.add_widget(BudgetScreen(name="BudgetScreen"))
         # self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
         # self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))

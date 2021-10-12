@@ -241,15 +241,17 @@
         
 <AddTransactionScreen>
     transaction_type: transaction_type.__self__
+    dropdown: dropdown.__self__
     location: location.__self__
-    date: date.__self__
     amount: amount.__self__
     tag: tag.__self__
     wallet: wallet.__self__
+    wallet_dropdown: wallet_dropdown.__self__
     calender: calender.__self__
-    dropdown: dropdown.__self__
+    frequency: frequency.__self__
+    frequency_dropdown: frequency_dropdown.__self__
     on_enter:
-        root.today_timestamp()
+        root.build_screen(app)
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -267,11 +269,52 @@
             Label:
                 text: 'Date'
             
-            TextInput:
-                id: date
-	            multiline: False
-                halign: "center"
+            Button:
+                id: calender
+                text: 'Calender'
+                on_press: root.build_calender(app)
+
+            Label:
+                text: 'Frequency'
             
+            Button:
+                id: frequency
+                text: "Once"
+                on_parent: frequency_dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_press: frequency_dropdown.open(self)
+                DropDown:
+                    id: frequency_dropdown
+                    on_select: frequency.text = f'{args[1]}' 
+                    
+                    Button:
+                        text: "Once"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Once")
+                    Button:
+                        text: "Daily"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Daily")
+                    Button:
+                        text: "Weekly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Weekly")
+                    Button:
+                        text: "Bi-Weekly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Bi-Weekly")
+                    Button:
+                        text: "Monthly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Monthly")
+                    Button:
+                        text: "Quarterly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Quarterly")                    
+                    Button:
+                        text: "Annually"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Annually")
             Label:
                 text: 'Amount'
             
@@ -313,18 +356,15 @@
             Label:
                 text: 'Wallet Name'
             
-            TextInput:
-                id: wallet
-                text: 'Standard Wallet'
-                multiline: False
-                halign: "center"
-            Label:
-                text: 'Frequency'
-            
             Button:
-                id: calender
-                text: 'Schedule'
-                on_press: root.build_calender(app)
+                id: wallet
+                text: "Standard Wallet"
+                on_parent: wallet_dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_press: wallet_dropdown.open(self)
+                DropDown:
+                    id: wallet_dropdown
+                    on_select: wallet.text = f'{args[1]}'
 
                                 
         BoxLayout:
@@ -428,11 +468,12 @@
         Label:
             id: schedule_label
             text: 'Schedule'
+            size_hint_y: .10
         Label:
             id: year_label
-            size_hint: (.001, .001)
-            pos_hint: {'x':.5 , 'y': .5}
+            size_hint_y: .2
         BoxLayout:
+            size_hint_y: .2 
             orientation: 'horizontal'
             BubbleButton: 
                 text: "<"
