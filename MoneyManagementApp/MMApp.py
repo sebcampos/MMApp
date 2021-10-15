@@ -66,9 +66,9 @@ class RegistrationScreen(Screen):
         user_data_dict = {i:v.text for i,v in self.ids.items()}
         data = encryption(json.dumps(user_data_dict))
         #send json data as encrypted bytes
-        UrlRequest(f"https://{end_point_address}/login_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data,on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
-    def success(self, req, app):
-        response = json.loads(req.result)    
+        UrlRequest(f"https://{end_point_address}/register_user", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=data,on_success=lambda x,y: self.success(req=y, app=app, user_data_dict=user_data_dict), on_progress=self.animation, timeout=25, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    def success(self, req, app, user_data_dict):
+        response = json.loads(req)    
         #if Successfull save User() as app.user write down unique number in app directory and transition to menu screen
         if "Success" in response.keys():
             data = decrypt_packet(response)
@@ -345,14 +345,14 @@ class AddTransactionScreen(Screen):
         content["update"] = "add transaction"
         content["user_name"] = app.user_name
         #send json data as encrypted bytes
-        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content),on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
-    def success(self, req, app):
-        response = json.loads(req.result)
+        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content),on_success=lambda x,y: self.success(req=y, app=app, data=data), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    def success(self, req, app, data):
+        response = json.loads(req)
         if "Success" in response.keys():
             transaction_id = len(app.transactions)
             df = pandas.DataFrame({
 			"transaction_id": [int(transaction_id)],
-			"transaction_date": [data["date"]],
+			"transaction_date": [data["calender"]],
 			"amount": [float(data["amount"])],
 			"location": [data["location"]],
 			"transaction_type": [data["transaction_type"]],
@@ -365,11 +365,11 @@ class AddTransactionScreen(Screen):
             app.transactions.reset_index(inplace=True, drop=True)
 
             #subtract from wallet
-            if content["transaction_type"] == "Withdrawl":
-                app.wallets.loc[wallets.wallet_name == content["wallet"], "wallet_amount"] -= int(content["amount"])
+            if data["transaction_type"] == "Withdrawl":
+                app.wallets.loc[app.wallets.wallet_name == content["wallet"], "wallet_amount"] -= float(content["amount"])
             #add to wallet
-            elif content["transaction_type"] == "Deposit":
-                app.wallets.loc[wallets.wallet_name == content["wallet"], "wallet_amount"] += int(content["amount"])
+            elif data["transaction_type"] == "Deposit":
+                app.wallets.loc[app.wallets.wallet_name == content["wallet"], "wallet_amount"] += float(content["amount"])
             
             #clear screen
             for i,v in self.ids.items():
@@ -475,7 +475,6 @@ class ScheduleScreen(Screen):
         #iterate over dataframe and add to gridlayout widget
         for column in df.columns:
             self.ids['gl'].add_widget(Label(text=column))
-        
         for row in df.values:
             for cell in row:
                 #padding months and days
@@ -488,13 +487,14 @@ class ScheduleScreen(Screen):
                 else:
                     month = month
                 if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) and self.mini == False:
+                    print("condition met")
                     bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app))
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
                     self.ids['gl'].add_widget(bb)
 
                 if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
-                    bb = BubbleButton(text=f"Today {cell}", on_press=lambda button: self.view_day(button, app=app))
+                    bb = BubbleButton(text=f"Today {cell}", on_press=lambda button: self.view_day(button, app=app, mini=self.mini))
                     bb.background_normal = ""
                     bb.background_color = (0, .5, 1, .5)
                     self.ids['gl'].add_widget(bb)                           
@@ -515,6 +515,8 @@ class ScheduleScreen(Screen):
             button.background_normal = ""
             button.background_color = (0, .5, 1, 1)
             day = button.text
+            if "Today" in day:
+                day = day.replace("Today ","")
             if len(day) == 1:
                 day = f"0{day}"
             if len(str(self.selected_month)) == 1:
