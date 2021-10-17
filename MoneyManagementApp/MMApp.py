@@ -350,6 +350,9 @@ class AddTransactionScreen(Screen):
         response = json.loads(req)
         if "Success" in response.keys():
             transaction_id = len(app.transactions)
+            print(transaction_id)
+            if transaction_id < 1:
+                transaction_id =  0
             df = pandas.DataFrame({
 			"transaction_id": [int(transaction_id)],
 			"transaction_date": [data["calender"]],
@@ -362,6 +365,7 @@ class AddTransactionScreen(Screen):
 
             #add to transaction table
             app.transactions = pandas.concat([app.transactions, df])
+            app.transactions.transaction_id = app.transactions.transaction_id.astype('int')
             app.transactions.reset_index(inplace=True, drop=True)
             #if transaction is for today
             if data["calender"] == str(datetime.datetime.today().date()):
@@ -371,9 +375,30 @@ class AddTransactionScreen(Screen):
                 #add to wallet
                 elif data["transaction_type"] == "Deposit":
                     app.wallets.loc[app.wallets.wallet_name == data["wallet"], "wallet_amount"] += float(data["amount"])
-            if data["frequency"] != "Once":
-                #TODO
-                print("schedule me")
+            if data["frequency"] != "Once" and data["frequency"] != "Daily":
+                #map for frequency
+                freq_map = {
+                    "Once": 1,
+                    "Daily": 1000,
+                    "Weekly": 7,
+                    "Bi-Weekly": 14,
+                    "Monthly": 30,
+                    "Quarterly": 90,
+                    "Annually": 360
+                }
+                df = pandas.DataFrame({
+                    "transaction_id": [int(transaction_id)],
+                    "frequency": [freq_map[data['frequency']]],
+                    "scheduled_date": [data["calender"]],
+                    "next_day": [datetime.datetime.strptime(data["calender"], "%Y-%m-%d") + datetime.timedelta(days=freq_map[data['frequency']])],
+                    "amount": [data["amount"]],
+                    "transaction_type": [data["transaction_type"]],
+                    "wallet_name": [data["wallet"]],
+                    "added_today": [True]
+			    })
+                app.schedule = pandas.concat([app.schedule, df])
+                app.transactions.reset_index(inplace=True, drop=True)
+                app.schedule.transaction_id = app.schedule.transaction_id.astype('int')
 
             #clear screen
             for i,v in self.ids.items():
@@ -490,7 +515,7 @@ class ScheduleScreen(Screen):
                     month = f"0{month}"
                 else:
                     month = month
-                if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) and self.mini == False:
+                if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) and self.mini == False and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
                     bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app))
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
@@ -526,7 +551,11 @@ class ScheduleScreen(Screen):
                 self.selected_month = f"0{self.selected_month}"
             app.sm.get_screen("AddTransactionScreen").ids["calender"].text = f"{self.year}-{self.selected_month}-{day}"
             return
-        self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, button.text, app.transactions)
+        if "Today" in button.text:
+            today = button.text.replace("Today ","")
+        else:
+            today = button.text
+        self.manager.get_screen("DayScreen").load_day(self.schedule, self.year, self.selected_month, today, app.transactions)
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "DayScreen"
@@ -604,6 +633,21 @@ class DayScreen(Screen):
         self.manager.transition.duration = 1
         self.manager.current = "AddTransactionScreen"
 
+class WalletsScreen(Screen):
+    def load_wallets(self, app):
+        gl = self.ids["gl"]
+        gl.clear_widgets()
+        gl.size_hint_y = len(app.wallets) / 2.5
+        for row in app.wallets.values:
+            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3)))
+            for item in row[1:]:
+                gl.add_widget(Label(text=str(item)))
+
+class AddWalletScreen(Screen):
+    def add_wallet(self, app):
+        data = {i:v.text for i,v in self.ids.items() if i != 'gl'}
+        print(data)
+
 
 class MMApp(App):
     def build(self):
@@ -617,8 +661,8 @@ class MMApp(App):
         self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
         self.sm.add_widget(DayScreen(name="DayScreen"))
         # self.sm.add_widget(BudgetScreen(name="BudgetScreen"))
-        # self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
-        # self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
+        self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
+        self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
         # self.sm.add_widget(GoalsScreen(name="GoalsScreen"))
         # self.sm.add_widget(AddGoalScreen(name="AddGoalScreen"))
         # self.sm.add_widget(AnalysisScreen(name="AnalysisScreen"))        

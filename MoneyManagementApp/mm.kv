@@ -226,18 +226,18 @@
             orientation: 'horizontal'
             BubbleButton:
                 background_color: (4, 0, 100, 5)
-                text: "Add Transaction"
-                on_press:
-                    root.manager.transition.direction = "left"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "AddTransactionScreen"
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
                 text: "Return to Menu"
                 on_press:
                     root.manager.transition.direction = "right"
                     root.manager.transition.duration = 1
                     root.manager.current = "MenuScreen"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.manager.transition.direction = "left"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "AddTransactionScreen"
         
 <AddTransactionScreen>
     transaction_type: transaction_type.__self__
@@ -436,21 +436,21 @@
             orientation: "horizontal"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
-                text: "Transactions"
+                text: "Back"
                 on_press:
                     root.manager.transition.direction = "right"
                     root.manager.transition.duration = 1
                     root.manager.current = "TransactionsScreen"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
-                text: "Schedule Transaction"
-                on_press:
-                    root.schedule_transaction(app)
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
                 text: "Delete"
                 on_press:
                     root.delete_transaction(app)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule Transaction"
+                on_press:
+                    root.schedule_transaction(app)
 
 <ScheduleScreen>
     schedule_label: schedule_label.__self__
@@ -605,11 +605,23 @@
                 text: 'Wallet Amount'
             Label:
                 text: 'Description'
-        GridLayout:
-            id: gl
-            cols: 4
+        ScrollView:
+            bar_inactive_color: (1, 1, 1, 1)
+            scroll_type: ["bars"]
+            bar_color: (1,1,1,1)
+            bar_width: 10
+            GridLayout:
+                id: gl
+                cols: 4
         BoxLayout:
             orientation: 'horizontal'        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    root.manager.current = "MenuScreen"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: 'Add Wallet'
@@ -618,15 +630,10 @@
                     root.manager.transition.duration = 1
                     root.manager.current = "AddWalletScreen"
 
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: 'Back'
-                on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "MenuScreen"
-
 <AddWalletScreen>
+    wallet_name: wallet_name.__self__
+    wallet_amount: wallet_amount.__self__
+    wallet_description: wallet_description.__self__
     gl: gl.__self__
     BoxLayout:
         orientation: 'vertical'
@@ -638,16 +645,19 @@
             Label:
                 text: 'Wallet Name'
             TextInput:
+                id: wallet_name
                 text: ""
                 halign: "center"                    
             Label:
                 text: 'Wallet Amount'
             TextInput:
+                id: wallet_amount
                 text: ''
                 halign: "center"    
             Label:
                 text: 'Wallet Description'
             TextInput:
+                id: wallet_description
                 text: ''    
                 halign: "center"
         BoxLayout:
