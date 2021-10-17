@@ -159,6 +159,7 @@ class LoginScreen(Screen):
     def reset_password(self):
         pass
 
+#Menu Screen
 class MenuScreen(Screen):
     def log_out(self, app):
         app.user = False
@@ -169,6 +170,7 @@ class MenuScreen(Screen):
         self.manager.transition.duration = 1
         self.manager.current = "LoginScreen"
 
+#Transactions Screen
 class TransactionsScreen(Screen):
     #display transaction data on screen
     def display_transactions(self, app):
@@ -236,7 +238,8 @@ class TransactionsScreen(Screen):
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "ViewTransactionScreen"
-        
+
+#View A Transaction        
 class ViewTransactionScreen(Screen):
     def populate_screen(self, button, transactions):
         df = transactions.loc[transactions.transaction_id == int(button)]
@@ -306,6 +309,7 @@ class ViewTransactionScreen(Screen):
     def animation(*argsv):
         print(argsv)
 
+#Add A Transaction
 class AddTransactionScreen(Screen):
     #build calender
     def build_calender(self, app):
@@ -423,6 +427,7 @@ class AddTransactionScreen(Screen):
     def animation(*argsv):
         print(argsv)
 
+#Schedule Screen
 class ScheduleScreen(Screen):    
     def clear_calender(self):
         self.ids['gl'].clear_widgets()
@@ -594,6 +599,7 @@ class ScheduleScreen(Screen):
         else:
             self.load_schedule(app, new_month={"year":self.year, "month": current_month})
 
+#View A Day Data
 class DayScreen(Screen):
     def load_day(self, schedule, year, month, day, df):
         self.schedule = schedule
@@ -633,6 +639,7 @@ class DayScreen(Screen):
         self.manager.transition.duration = 1
         self.manager.current = "AddTransactionScreen"
 
+#Wallets Screen
 class WalletsScreen(Screen):
     def load_wallets(self, app):
         gl = self.ids["gl"]
@@ -643,6 +650,7 @@ class WalletsScreen(Screen):
             for item in row[1:]:
                 gl.add_widget(Label(text=str(item)))
 
+#Add A Wallet
 class AddWalletScreen(Screen):
     def add_wallet(self, app):
         data = {i:v.text for i,v in self.ids.items() if i != 'gl'}
@@ -682,6 +690,7 @@ class AddWalletScreen(Screen):
     def animation(*argsv):
         print(argsv)
 
+#App
 class MMApp(App):
     def build(self):
         self.sm = ScreenManager()
