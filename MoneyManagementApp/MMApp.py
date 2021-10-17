@@ -646,8 +646,41 @@ class WalletsScreen(Screen):
 class AddWalletScreen(Screen):
     def add_wallet(self, app):
         data = {i:v.text for i,v in self.ids.items() if i != 'gl'}
-        print(data)
+        try:
+            float(data['wallet_amount'])
+        except:
+            cb = BubbleButton(text="Amount must be an numeric value\n\n\n\n   Close")
+            pu = Popup(title="InputError", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+            return
+        
+        data["user_id"] = app.user_id
+        data["user_password"] = app.user_password
+        content = data.copy()
+        content = encrypt_packet(content, app.user_name)
+        content["update"] = "add wallet"
+        content["user_name"] = app.user_name
+        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(content),on_success=lambda x,y: self.success(req=y, app=app, data=data), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+    def success(self, req, app, data):
+        packet = json.loads(req)
+        if "Success" in packet.keys():
+            print(data)
 
+            cb = BubbleButton(text="Wallet Added\n\n\n\n   Close")
+            pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+
+    #Url request error
+    def error(*argsv):
+            cb = BubbleButton(text=f"{argsv[-1]}\n\n\n\n   Close")
+            pu = Popup(title="APIError `add_wallet`", content=cb, size_hint=(.5, .5))
+            cb.bind(on_press=pu.dismiss)
+            pu.open()
+
+    def animation(*argsv):
+        print(argsv)
 
 class MMApp(App):
     def build(self):

@@ -664,16 +664,16 @@
             orientation: 'horizontal'
             BubbleButton:
                 background_color: (4, 0, 100, 5)
-                text: 'Add To Wallets'
-                on_press:
-                    root.add_wallet(app)
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
                 text: 'Back'
                 on_press:
                     root.manager.transition.direction = "right"
                     root.manager.transition.duration = 1
                     root.manager.current = "WalletsScreen"                 
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Add To Wallets'
+                on_press:
+                    root.add_wallet(app)
 
 
 
