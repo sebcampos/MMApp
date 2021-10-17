@@ -213,8 +213,8 @@ class TransactionsScreen(Screen):
         #if the button state is in decending sort column values in ascending order
         if self.column_states[button.text] == "descending": 
             for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
-                gl.add_widget(BubbleButton(text=str(row[1]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-                for cell in row[2:]:
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+                for cell in row[1:]:
                     gl.add_widget(Label(text=str(cell)))
             #set new state to ascending
             self.column_states[button.text] = "ascending"
@@ -265,10 +265,10 @@ class ViewTransactionScreen(Screen):
         packet = encrypt_packet(packet, user=app.user_name)
         packet["user_name"] = app.user_name
         packet["update"] = "delete transaction"
-        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_success=lambda x,y: self.success(req=y, app=app), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
+        UrlRequest(f"https://{end_point_address}/user_services/update", req_headers={'Content-type': 'application/json', "fromApp": "True"}, req_body=json.dumps(packet), on_success=lambda x,y: self.success(req=y, app=app, data=data), on_progress=self.animation, timeout=10, on_error=self.error, on_failure=lambda x,y: print("failure",y), verify=False)
     #function called after successfull https request
-    def success(self, req, app):
-        packet = json.loads(req.result)
+    def success(self, req, app, data):
+        packet = json.loads(req)
         if "Success" in packet.keys():
             #drop row from dataframe
             app.transactions.drop(app.transactions.loc[app.transactions.transaction_id == int(data["transaction_id"])].index, inplace=True)
@@ -363,14 +363,18 @@ class AddTransactionScreen(Screen):
             #add to transaction table
             app.transactions = pandas.concat([app.transactions, df])
             app.transactions.reset_index(inplace=True, drop=True)
+            #if transaction is for today
+            if data["calender"] == str(datetime.datetime.today().date()):
+                #subtract from wallet
+                if data["transaction_type"] == "Withdrawl":
+                    app.wallets.loc[app.wallets.wallet_name == data["wallet"], "wallet_amount"] -= float(data["amount"])
+                #add to wallet
+                elif data["transaction_type"] == "Deposit":
+                    app.wallets.loc[app.wallets.wallet_name == data["wallet"], "wallet_amount"] += float(data["amount"])
+            if data["frequency"] != "Once":
+                #TODO
+                print("schedule me")
 
-            #subtract from wallet
-            if data["transaction_type"] == "Withdrawl":
-                app.wallets.loc[app.wallets.wallet_name == content["wallet"], "wallet_amount"] -= float(content["amount"])
-            #add to wallet
-            elif data["transaction_type"] == "Deposit":
-                app.wallets.loc[app.wallets.wallet_name == content["wallet"], "wallet_amount"] += float(content["amount"])
-            
             #clear screen
             for i,v in self.ids.items():
                 if i != "transaction_type" and i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown":
@@ -487,7 +491,6 @@ class ScheduleScreen(Screen):
                 else:
                     month = month
                 if f"{year}-{month}-{cell}" in list(self.schedule["scheduled_date"]) and self.mini == False:
-                    print("condition met")
                     bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app))
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
@@ -580,7 +583,7 @@ class DayScreen(Screen):
         gl = self.children[0].children[1]
         day_data = schedule.loc[schedule.scheduled_date == f"{self.year}-{self.month}-{self.day}"]
         gl.clear_widgets()
-        for row in day_data.values:
+        for row in day_data[["transaction_id", "frequency", "scheduled_date","transaction_type", "amount", "wallet_name"]].values:
             gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_transaction))
             for item in row[1:]:
                 gl.add_widget(Label(text=str(item)))
