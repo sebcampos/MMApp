@@ -675,7 +675,7 @@ class AddWalletScreen(Screen):
             del data['user_id']
             del data['user_password']
             df = pandas.DataFrame({
-                "wallet_id": [len(app.wallets) + 1],
+                "wallet_id": [len(app.wallets)],
                 "wallet_name": [data["wallet_name"]],
                 "wallet_amount": [data["wallet_amount"]],
                 "short_description": [data["wallet_description"]]
