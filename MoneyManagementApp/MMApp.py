@@ -354,7 +354,6 @@ class AddTransactionScreen(Screen):
         response = json.loads(req)
         if "Success" in response.keys():
             transaction_id = len(app.transactions)
-            print(transaction_id)
             if transaction_id < 1:
                 transaction_id =  0
             df = pandas.DataFrame({
@@ -379,7 +378,7 @@ class AddTransactionScreen(Screen):
                 #add to wallet
                 elif data["transaction_type"] == "Deposit":
                     app.wallets.loc[app.wallets.wallet_name == data["wallet"], "wallet_amount"] += float(data["amount"])
-            if data["frequency"] != "Once" and data["frequency"] != "Daily":
+            if data["frequency"] != "Daily" and data["calender"] != str(datetime.datetime.today().date()):
                 #map for frequency
                 freq_map = {
                     "Once": 1,
@@ -673,8 +672,17 @@ class AddWalletScreen(Screen):
     def success(self, req, app, data):
         packet = json.loads(req)
         if "Success" in packet.keys():
-            print(data)
-
+            del data['user_id']
+            del data['user_password']
+            df = pandas.DataFrame({
+                "wallet_id": [len(app.wallets) + 1],
+                "wallet_name": [data["wallet_name"]],
+                "wallet_amount": [data["wallet_amount"]],
+                "short_description": [data["wallet_description"]]
+            })
+            app.wallets = pandas.concat([app.wallets, df])
+            app.wallets.wallet_id = app.wallets.wallet_id.astype('int')
+            app.wallets.reset_index(inplace=True, drop=True)
             cb = BubbleButton(text="Wallet Added\n\n\n\n   Close")
             pu = Popup(title="Success", content=cb, size_hint=(.5, .5))
             cb.bind(on_press=pu.dismiss)
