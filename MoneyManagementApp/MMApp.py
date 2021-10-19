@@ -402,6 +402,7 @@ class AddTransactionScreen(Screen):
                 app.schedule = pandas.concat([app.schedule, df])
                 app.transactions.reset_index(inplace=True, drop=True)
                 app.schedule.transaction_id = app.schedule.transaction_id.astype('int')
+                app.schedule.frequency = app.schedule.frequency.astype('int')
 
             #clear screen
             for i,v in self.ids.items():
