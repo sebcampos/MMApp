@@ -601,6 +601,7 @@ class ScheduleScreen(Screen):
 
 #View A Day Data
 class DayScreen(Screen):
+    #TODO
     def load_day(self, schedule, year, month, day, df):
         self.schedule = schedule
         self.year = year
@@ -698,6 +699,10 @@ class AddWalletScreen(Screen):
 
     def animation(*argsv):
         print(argsv)
+
+#ViewWalletScreen
+class ViewWalletScreen(Screen):
+    pass
 
 #App
 class MMApp(App):
