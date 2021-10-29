@@ -236,6 +236,7 @@
     calender: calender.__self__
     frequency: frequency.__self__
     frequency_dropdown: frequency_dropdown.__self__
+    back_button: back_button.__self__
     on_enter:
         root.build_screen(app)
     BoxLayout:
@@ -356,6 +357,7 @@
         BoxLayout:
             orientation: 'horizontal'
             BubbleButton:
+                id: back_button
                 background_color: (4, 0, 100, 5)
                 text: "Back"
                 on_press:
@@ -377,6 +379,7 @@
     type: type.__self__
     tag: tag.__self__
     wallet: wallet.__self__
+    back_button: back_button.__self__
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -421,6 +424,7 @@
         BoxLayout:
             orientation: "horizontal"
             BubbleButton:
+                id: back_button
                 background_color: (4, 0, 100, 5)
                 text: "Back"
                 on_press:

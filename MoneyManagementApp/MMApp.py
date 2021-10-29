@@ -241,7 +241,7 @@ class TransactionsScreen(Screen):
 
 #View A Transaction        
 class ViewTransactionScreen(Screen):
-    def populate_screen(self, button, transactions):
+    def populate_screen(self, button, transactions, return_to_day=False):
         df = transactions.loc[transactions.transaction_id == int(button)]
         self.ids["transaction_id"].text = str(df.transaction_id.item())
         self.ids["date"].text = str(df.transaction_date.item())
@@ -250,8 +250,16 @@ class ViewTransactionScreen(Screen):
         self.ids["type"].text = str(df.transaction_type.item())
         self.ids["tag"].text = str(df.transaction_tag.item())
         self.ids["wallet"].text = str(df.wallet_name.item())
+        if return_to_day == True:
+            self.ids["back_button"].on_press = self.transistion_to_day
         
     
+    def transistion_to_day(self):
+        self.manager.transition.direction = "right"
+        self.manager.transition.duration = 1
+        self.manager.current = "DayScreen"
+
+
     def delete_transaction(self, app):
         #collect transaction_id, wallet name, amount 
         data = {
@@ -285,6 +293,8 @@ class ViewTransactionScreen(Screen):
                 #if deposit deleted subtract amount from wallet
                 app.wallets.loc[app.wallets.wallet_name == data["wallet_name"], "wallet_amount"] += float(data["amount"])
             
+            if  int(data["transaction_id"]) in app.schedule.transaction_id.tolist():
+                app.schedule.drop(app.schedule.loc[app.schedule.transaction_id == int(data["transaction_id"])].index, inplace=True)
             #clear screen
             for widget in self.ids.values():
                 widget.text = ""
@@ -322,9 +332,22 @@ class AddTransactionScreen(Screen):
         sc.ids["bl"].add_widget(bb)
         self.pu.open()
 
+    def set_day(self, day):
+        self.ids["calender"].text = day
+        self.date_set = True
+        self.ids["back_button"].on_press = self.transistion_to_day
+    
+    def transistion_to_day(self):
+        self.manager.transition.direction = "up"
+        self.manager.transition.duration = 1
+        self.manager.current = "DayScreen"
+
+
     #today timestamp
     def build_screen(self, app):
-        self.ids["calender"].text = f"{datetime.datetime.now().date()}"
+        if self.date_set == False:
+            self.ids["calender"].text = f"{datetime.datetime.now().date()}"
+        self.date_set = False
         w = self.ids["wallet"]
         wd = self.ids["wallet_dropdown"]
         wd.clear_widgets()
@@ -625,7 +648,7 @@ class DayScreen(Screen):
                 gl.add_widget(Label(text=str(item)))
 
     def find_transaction(self, button):
-        self.parent.get_screen("ViewTransactionScreen").load_transaction(button.text, self.transactions)
+        self.parent.get_screen("ViewTransactionScreen").populate_screen(button.text, self.transactions, return_to_day=True)
         self.manager.transition.direction = "left"
         self.manager.transition.duration = 1
         self.manager.current = "ViewTransactionScreen"
@@ -635,7 +658,7 @@ class DayScreen(Screen):
             self.month = f"0{self.month}"
         if len(str(self.day)) == 1:
             self.day = f"0{self.day}"
-        self.manager.get_screen("AddTransactionScreen").schedule(f"{self.year}-{self.month}-{self.day}")
+        self.manager.get_screen("AddTransactionScreen").set_day(f"{self.year}-{self.month}-{self.day}")
         self.manager.transition.direction = "down"
         self.manager.transition.duration = 1
         self.manager.current = "AddTransactionScreen"
