@@ -345,8 +345,11 @@ class AddTransactionScreen(Screen):
 
     #today timestamp
     def build_screen(self, app):
-        if self.date_set == False:
-            self.ids["calender"].text = f"{datetime.datetime.now().date()}"
+        try:
+            if self.date_set == False:
+                self.ids["calender"].text = f"{datetime.datetime.now().date()}"
+        except:
+            pass
         self.date_set = False
         w = self.ids["wallet"]
         wd = self.ids["wallet_dropdown"]
@@ -429,7 +432,7 @@ class AddTransactionScreen(Screen):
 
             #clear screen
             for i,v in self.ids.items():
-                if i != "transaction_type" and i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown":
+                if i != "transaction_type" and i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown" and i != "back_button":
                     v.text = ""
             self.ids["calender"].text = "calender"
 
