@@ -548,7 +548,6 @@ class ScheduleScreen(Screen):
                     month = month
                 
                 if f"{year}-{month}-{new_cell}" in list(self.schedule["scheduled_date"]) and self.mini == False and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
-                    print("completed")
                     bb = BubbleButton(text=f"{cell}", on_press=lambda button: self.view_day(button, app=app))
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
