@@ -335,7 +335,8 @@ class AddTransactionScreen(Screen):
     def set_day(self, day):
         self.ids["calender"].text = day
         self.date_set = True
-        self.ids["back_button"].on_press = self.transistion_to_day
+        #self.ids["back_button"].on_press = self.transistion_to_day
+    
     
     def transistion_to_day(self):
         self.manager.transition.direction = "up"
