@@ -34,7 +34,7 @@ class User():
         })
          
     def __repr__(self):
-        return f"Username:\t{self.username}\nEmail:\t{self.email}\nPassword:\t{self.password}\nPhone:\t{self.phone_number}"
+        return self.dataframe
 
 #Registration Screen
 class RegistrationScreen(Screen):
