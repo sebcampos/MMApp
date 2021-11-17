@@ -29,6 +29,8 @@ class User():
         self.password = None
         self.add_new_transaction_dict = None
         self.delete_transaction_dict = None
+        self.add_wallet_dict = None
+        self.delete_wallet_dict = None
         self.freq_map = {
             "Once": 1,
             "Daily": 1000,
@@ -65,6 +67,7 @@ class Screen(Screen):
         self.today = None
         super().__init__()
         self.name = name
+        self.mini = False
         self.translate_columns = {
             "ID":"transaction_id",
             "Date":"transaction_date",
@@ -196,7 +199,7 @@ class Screen(Screen):
                         self.ids["calender"].text = "calender"
                 self.prompt("Success","Transaction Added")
                 
-            elif response["Success"] == "Transaction deleted and Wallet updated":
+            elif response["Success"] == "Transaction deleted, Wallet updated, Schedule updated":
                 #drop row from dataframe
                 app_user.transactions.drop(app_user.transactions.loc[app_user.transactions.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
                 #decrement all ids greater than current by 1
@@ -208,12 +211,23 @@ class Screen(Screen):
                 elif app_user.delete_transaction_dict["transaction_type"] == "Deposit":
                     #if deposit deleted subtract amount from wallet
                     app_user.wallets.loc[app_user.wallets.wallet_name == app_user.delete_transaction_dict["wallet_name"], "wallet_amount"] += float(app_user.delete_transaction_dict["amount"])
-                
+                #delete transaction from the schedule
                 if  int(app_user.delete_transaction_dict["transaction_id"]) in app_user.schedule.transaction_id.tolist():
-                    app_user.schedule.drop(app.schedule.loc[app_user.schedule.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
+                    app_user.schedule.drop(app_user.schedule.loc[app_user.schedule.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
                 #clear screen
                 for widget in self.ids.values():
                     widget.text = ""
+                self.prompt("Success", response["Success"])
+            elif response["Success"] == "New Wallet added":
+                df = pd.DataFrame({
+                    "wallet_id": [len(app_user.wallets)],
+                    "wallet_name": [self.add_wallet_dict["wallet_name"]],
+                    "wallet_amount": [self.add_wallet_dict["wallet_amount"]],
+                    "short_description": [self.add_wallet_dict["wallet_description"]]
+                })
+                app_user.wallets = pd.concat([app_user.wallets, df])
+                app_user.wallets.wallet_id = app_user.wallets.wallet_id.astype('int')
+                app_user.wallets.reset_index(inplace=True, drop=True)
                 self.prompt("Success", response["Success"])
 
 
@@ -231,7 +245,7 @@ class Screen(Screen):
         cb.bind(on_press=pu.dismiss)
         pu.open()
     
-    def check_user_inputs(self, inputs, registration=False):
+    def check_user_inputs(self, inputs, registration=False, wallet_check=False):
         if registration == True:
             if len(inputs["password"]) < 8:
                 self.prompt("InputError", "Password Must be at least 8 characters long")
@@ -246,10 +260,16 @@ class Screen(Screen):
             if ";" in v or "select" in v.lower() or "drop" in v.lower():
                 self.prompt("InputError", "No input can hold the character ';', word 'SELECT' or 'DROP'")
                 return False
+        if wallet_check == True:
+            try:
+                float(inputs['wallet_amount'])
+            except:
+                self.prompt("InputError", "wallet amount must be and integer or decimal")
+                return False
         
         return True
     
-    def build_calender(self, year=datetime.datetime.now().year, month=datetime.datetime.now().month, mini=False):
+    def build_calender(self, year=datetime.datetime.now().year, month=datetime.datetime.now().month):
         days_in_month = self.collect_days_in_month(year, month)
         self.ids['year_label'].text = str(year)
         self.ids['current_month'].text = self.calender[str(month)]
@@ -292,17 +312,17 @@ class Screen(Screen):
                     month = month
                 
                 if f"{year}-{month}-{new_cell}" in list(app_user.schedule["scheduled_date"]) and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
-                    if mini == True:
+                    if self.mini == True:
                         bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
                     else:
                         bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
                     bb.background_normal = ""
                     bb.background_color=  (.4, .5, 100, .3)
-                    self.ids['gl'].add_widget(bb)
+                    self.ids['gl_calender'].add_widget(bb)
                     continue
 
                 if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
-                    if mini == True:
+                    if self.mini == True:
                         bb = BubbleButton(text=f"Today {cell}", on_press=self.select_day)
                     else:
                         bb = BubbleButton(text=f"Today {cell}", on_press=self.view_day)
@@ -314,7 +334,7 @@ class Screen(Screen):
                     self.ids['gl_calender'].add_widget(Label(text=""))
                 
                 else:
-                    if mini == True:
+                    if self.mini == True:
                         bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
                     else:
                         bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
@@ -333,8 +353,21 @@ class Screen(Screen):
         self.screen_transition("DayScreen")
 
     def select_day(self, button):
-        print(self.parent.parent.parent.parent.parent)
-        self.manager.get_screen("AddTransactionScreen").ids["calender"].text = button.text
+        if len(str(self.selected_month)) == 1:
+            month = f"0{self.selected_month}"
+        else:
+            month = str(self.selected_month)
+        if len(str(button.text)) == 1:
+            day = f"0{button.text}"
+        else:
+            day = str(button.text)
+        self.manager.get_screen("AddTransactionScreen").ids["calender"].text = f"{self.ids['year_label'].text}-{month}-{day}"
+        for b in self.ids["gl_calender"].children:
+            b.background_normal = ""
+            b.background_color=  (0, 0, 0, 0)
+
+        button.background_normal = ""
+        button.background_color = (0, .5, 1, .5)
 
     def change_month(self, button):
         current_month = int([i for i,v in self.calender.items() if v == self.ids["current_month"].text][0])
@@ -471,14 +504,16 @@ class AddTransactionScreen(Screen):
                 self.send_request(json.dumps(packet), "update")
         def mini_calender(self):
             sc = ScheduleScreen("MiniCalender")
-            sc.build_calender(mini=True)
+            sc.mini = True
+            sc.build_calender()
+            self.manager.add_widget(sc)
             pu = Popup(title="Calender", content=sc, size_hint=(.7, .7))
-            self.pu = pu
-            #bb = BubbleButton(text="Close", on_press=self.pu.dismiss)
-            #sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
-            #sc.ids["bl"].add_widget(bb)
-            self.pu.open()
-                
+            bb = BubbleButton(text="Close", on_press=pu.dismiss)
+            sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
+            sc.ids["bl"].add_widget(bb)
+            print(self.manager.screens)
+            pu.open()
+                          
 class ViewTransactionScreen(Screen):
     def populate_screen(self, button_txt):
         self.transaction_id = int(button_txt)
@@ -522,7 +557,7 @@ class DayScreen(Screen):
         day_data = app_user.schedule.loc[app_user.schedule.scheduled_date == f"{year}-{month}-{day}"]
         gl.clear_widgets()
         for row in day_data[["transaction_id", "frequency", "scheduled_date","transaction_type", "amount", "wallet_name"]].values:
-            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_transaction))
+            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
             for item in row[1:]:
                 gl.add_widget(Label(text=str(item)))
     def add_transaction(self):
@@ -530,6 +565,42 @@ class DayScreen(Screen):
         self.manager.get_screen("AddTransactionScreen").build_screen(date=self.ids["date"].text)
         self.screen_transition("AddTransactionScreen")
     
+class WalletsScreen(Screen):
+    def load_wallets(self):
+        gl = self.ids["gl"]
+        gl.clear_widgets()
+        gl.size_hint_y = len(app_user.wallets) / 2.5
+        for row in app_user.wallets.values:
+            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_wallet))
+            for item in row[1:]:
+                gl.add_widget(Label(text=str(item)))
+    def find_wallet(self, button):
+        self.manager.get_screen("ViewWalletScreen").load_wallet(button)
+        self.screen_transition("ViewWalletScreen")
+
+class AddWalletScreen(Screen):
+    def add_wallet(self):
+        data = {i:v.text for i,v in self.ids.items() if i != 'gl'}
+        if self.check_user_inputs(data, wallet_check=True) == True:
+            data["user_id"] = app_user.user_id
+            data["user_password"] = app_user.password
+            packet = data.copy()
+            packet = encrypt_packet(packet, app_user.username)
+            packet["update"] = "add wallet"
+            packet["user_name"] = app_user.username
+            self.add_wallet_dict = data 
+            self.send_request(json.dumps(packet), "update")    
+
+class ViewWalletScreen(Screen):
+    def load_wallet(self):
+        pass
+    #delete wallet button
+    #transaction count
+
+
+
+class AnalysisScreen(Screen):
+    pass
 
 class MonManApp(App):
     def build(self):
@@ -542,6 +613,9 @@ class MonManApp(App):
         self.sm.add_widget(ViewTransactionScreen(name="ViewTransactionScreen"))
         self.sm.add_widget(ScheduleScreen(name="ScheduleScreen"))
         self.sm.add_widget(DayScreen(name="DayScreen"))
+        self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
+        self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
+        self.sm.add_widget(ViewWalletScreen(name="ViewWalletScreen"))
         if "user.db" in os.listdir():
             self.sm.current =  "LoginScreen"
         else:
