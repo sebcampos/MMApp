@@ -610,7 +610,7 @@
     wallet_amount: wallet_amount.__self__
     wallet_description: wallet_description.__self__
     transaction_count: transaction_count.__self__
-    date_created: .__self__
+    date_created: date_created.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -642,8 +642,43 @@
                 text: ''    
                 halign: "center"
             Label:
+                text: "Transaction Count"
+            Label:
                 id: transaction_count
                 text: ""
                 halign: "center"
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("WalletsScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Delete Wallet'
+                on_press:
+                    root.delete_wallet()
+
+<AnalysisScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Analysis Screen in Progress
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("MenuScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Email Data'
+                on_press:
+                    root.send_email()
+
+
+
             
             

@@ -121,12 +121,16 @@ class Screen(Screen):
             on_progress=self.animation, 
             timeout=20, 
             on_error=self.request_error, 
-            on_failure=lambda x,y: print("failure",y), 
+            on_failure=self.failed_request, 
             verify=False
         )
-    
+
+    def failed_request(self, req, response):
+        print("failed")
+        self.prompt(f"{self.name}Error",response)
+
     def request_response(self, req, response):
-        response = json.loads(response)        
+        response = json.loads(response)     
         if "Success" in response.keys():
             if response["Success"] == 'registration complete':
                 #register user
@@ -149,9 +153,7 @@ class Screen(Screen):
                 packet = decrypt_packet(response, user=app_user.username)
                 app_user.transactions = pd.DataFrame.from_dict(json.loads(packet["Transactions"]))
                 app_user.schedule = pd.DataFrame.from_dict(json.loads(packet["Schedule"]))
-                app_user.goals = pd.DataFrame.from_dict(json.loads(packet["Goals"]))
                 app_user.wallets = pd.DataFrame.from_dict(json.loads(packet["Wallets"]))
-                app_user.budgets =  pd.DataFrame.from_dict(json.loads(packet["Budgets"]))
                 #transition to main menu
                 self.screen_transition("MenuScreen")
             elif response["Success"] == "Transaction added":
@@ -221,13 +223,19 @@ class Screen(Screen):
             elif response["Success"] == "New Wallet added":
                 df = pd.DataFrame({
                     "wallet_id": [len(app_user.wallets)],
-                    "wallet_name": [self.add_wallet_dict["wallet_name"]],
-                    "wallet_amount": [self.add_wallet_dict["wallet_amount"]],
-                    "short_description": [self.add_wallet_dict["wallet_description"]]
+                    "wallet_name": [app_user.add_wallet_dict["wallet_name"]],
+                    "wallet_amount": [app_user.add_wallet_dict["wallet_amount"]],
+                    "short_description": [app_user.add_wallet_dict["wallet_description"]],
+                    "wallet_created_date": [str(datetime.datetime.now().date())],
+                    "transaction_count": [0]
                 })
                 app_user.wallets = pd.concat([app_user.wallets, df])
                 app_user.wallets.wallet_id = app_user.wallets.wallet_id.astype('int')
                 app_user.wallets.reset_index(inplace=True, drop=True)
+                self.prompt("Success", response["Success"])
+            
+            elif response["Success"] == "Wallet deleted":
+                app_user.wallets.drop(app_user.wallets.loc[app_user.wallets.wallet_name == app_user.delete_wallet_dict["wallet_name"]].index, inplace=True)
                 self.prompt("Success", response["Success"])
 
 
@@ -570,7 +578,7 @@ class WalletsScreen(Screen):
         gl = self.ids["gl"]
         gl.clear_widgets()
         gl.size_hint_y = len(app_user.wallets) / 2.5
-        for row in app_user.wallets.values:
+        for row in app_user.wallets[["wallet_id", "wallet_name", "wallet_amount", "short_description"]].values:
             gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_wallet))
             for item in row[1:]:
                 gl.add_widget(Label(text=str(item)))
@@ -588,19 +596,33 @@ class AddWalletScreen(Screen):
             packet = encrypt_packet(packet, app_user.username)
             packet["update"] = "add wallet"
             packet["user_name"] = app_user.username
-            self.add_wallet_dict = data 
+            app_user.add_wallet_dict = data 
             self.send_request(json.dumps(packet), "update")    
 
 class ViewWalletScreen(Screen):
-    def load_wallet(self):
-        pass
-    #delete wallet button
-    #transaction count
-
-
+    def load_wallet(self, button):
+        df = app_user.wallets.loc[app_user.wallets.wallet_id == int(button.text)]
+        self.ids["date_created"].text = str(df.wallet_created_date.item())
+        self.ids["wallet_name"].text = df.wallet_name.item()
+        self.ids["wallet_amount"].text = str(df.wallet_amount.item())
+        self.ids["wallet_description"].text = df.short_description.item()
+        self.ids["transaction_count"].text = str(df.transaction_count.item())
+    
+    def delete_wallet(self):
+        data = {i:v.text for i,v in self.ids.items()}
+        app_user.delete_wallet_dict 
+        data["user_id"] = app_user.user_id
+        data["user_password"] = app_user.password
+        packet = data.copy()
+        packet = encrypt_packet(packet, app_user.username)
+        packet["update"] = "delete wallet"
+        packet["user_name"] = app_user.username
+        app_user.delete_wallet_dict  = data 
+        self.send_request(json.dumps(packet), "update")
 
 class AnalysisScreen(Screen):
-    pass
+    def send_email(self):
+        print("sending an email!")
 
 class MonManApp(App):
     def build(self):
