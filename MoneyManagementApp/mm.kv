@@ -50,13 +50,21 @@
 	            multiline: False
                 id: phone_number
                 halign: "center"                
-        BubbleButton:
-            background_color: (4, 0, 100, 5)
-            size_hint: 0.5, 0.4
-            pos_hint: {'x':.25 , 'y': .5}
-            text: "Submit"
-            on_press:
-                root.register(app)
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Login"
+                on_press:
+                    root.screen_transition("LoginScreen")
+            
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Register"
+                on_press:
+                    root.register()
+
+
 <LoginScreen>:
     username: username.__self__
     password: password.__self__
@@ -98,7 +106,7 @@
             pos_hint: {'x':.25 , 'y': .5}
             text: "Login"
             on_press:
-                root.login(app)
+                root.login()
        
         BoxLayout:
             orientation: 'horizontal'
@@ -111,9 +119,7 @@
                 background_color: (4, 0, 100, 5)
                 text: "New User"
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "RegistrationScreen"
+                    root.screen_transition("RegistrationScreen", direction='right')
 
 <MenuScreen>:
     BoxLayout:
@@ -132,27 +138,30 @@
             text: 'Transactions'
             background_color: (.4, .5, 100, .3)
             on_press:
-                root.manager.transition.direction = "left"
-                root.manager.transition.duration = 1
-                root.manager.current = "TransactionsScreen"
+                root.screen_transition("TransactionsScreen")
                 
 
         BubbleButton:
             text: 'Schedule'
             background_color: (.4, .5, 100, .3)
             on_press:
-                root.manager.transition.direction = "left"
-                root.manager.transition.duration = 1
-                root.manager.current = "ScheduleScreen"
+                root.manager.get_screen("ScheduleScreen").clear_calender()
+                root.manager.get_screen("ScheduleScreen").build_calender()
+                root.screen_transition("ScheduleScreen")
 
 
         BubbleButton:
             text: 'Wallets'
             background_color: (.4, .5, 100, .3)
             on_press:
-                root.manager.transition.direction = "left"
-                root.manager.transition.duration = 1
-                root.manager.current = "WalletsScreen"
+                root.screen_transition("WalletsScreen")
+        
+        BubbleButton:
+            text: 'Analysis'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.screen_transition("AnalysisScreen")
+
 
         
         BubbleButton:
@@ -161,10 +170,10 @@
             pos_hint: {'x':.25 , 'y': .5}
             text: "Logout"
             on_press:
-                root.log_out(app)
+                root.log_out()
 
 <TransactionsScreen>
-    on_enter: root.display_transactions(app)
+    on_enter: root.display_transactions()
     gl: gl.__self__
     BoxLayout:
         orientation: 'vertical'
@@ -175,31 +184,31 @@
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "ID"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Date"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Amount"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Loc"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Type"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Tag"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Wallet"
-                on_press: root.sort_table(self, app)
+                on_press: root.sort_table(self)
         ScrollView:
             bar_inactive_color: (1, 1, 1, 1)
             scroll_type: ["bars"]
@@ -214,17 +223,15 @@
                 background_color: (4, 0, 100, 5)
                 text: "Return to Menu"
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "MenuScreen"
+                    root.screen_transition("MenuScreen", direction="right")
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
-                    root.manager.transition.direction = "left"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "AddTransactionScreen"
-        
+                    root.manager.get_screen("AddTransactionScreen").previous_screen = "TransactionsScreen"
+                    root.manager.get_screen("AddTransactionScreen").build_screen()
+                    root.screen_transition("AddTransactionScreen")
+
 <AddTransactionScreen>
     transaction_type: transaction_type.__self__
     dropdown: dropdown.__self__
@@ -237,8 +244,6 @@
     frequency: frequency.__self__
     frequency_dropdown: frequency_dropdown.__self__
     back_button: back_button.__self__
-    on_enter:
-        root.build_screen(app)
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -259,7 +264,7 @@
             Button:
                 id: calender
                 text: 'Calender'
-                on_press: root.build_calender(app)
+                on_press: root.mini_calender()
 
             Label:
                 text: 'Frequency'
@@ -361,14 +366,12 @@
                 background_color: (4, 0, 100, 5)
                 text: "Back"
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "TransactionsScreen"
+                    root.screen_transition(root.previous_screen, "right")
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
-                    root.add_transaction(app)
+                    root.add_transaction()
 
 
 <ViewTransactionScreen>
@@ -379,9 +382,6 @@
     type: type.__self__
     tag: tag.__self__
     wallet: wallet.__self__
-    back_button: back_button.__self__
-    on_enter:
-        root.clear_calender()
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -426,34 +426,29 @@
         BoxLayout:
             orientation: "horizontal"
             BubbleButton:
-                id: back_button
                 background_color: (4, 0, 100, 5)
                 text: "Back"
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "TransactionsScreen"
+                    root.screen_transition(root.previous_screen, "down")
+
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Delete"
                 on_press:
-                    root.delete_transaction(app)
+                    root.delete_transaction()
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: "Schedule Transaction"
                 on_press:
-                    root.schedule_transaction(app)
+                    root.schedule_transaction()
 
 <ScheduleScreen>
     schedule_label: schedule_label.__self__
     year_label: year_label.__self__
-    gl: gl.__self__
+    gl_calender: gl_calender.__self__
     current_month: current_month.__self__
     dynamic_button: dynamic_button.__self__
     bl: bl.__self__
-    on_enter:
-        root.clear_calender()
-        root.load_schedule(app)
     BoxLayout:
         id: bl
         orientation: 'vertical'
@@ -470,31 +465,31 @@
             BubbleButton: 
                 text: "<"
                 on_press:
-                    root.change_month(self, app)
+                    root.change_month(self)
             Label:
                 id: current_month
                 text: ""
             BubbleButton:
                 text: ">"
                 on_press:
-                    root.change_month(self, app)
+                    root.change_month(self)
         GridLayout:
-            id: gl
+            id: gl_calender
             cols: 7
         BubbleButton:
             id: dynamic_button
             background_color: (4, 0, 100, 5)
             text: "Return To Menu"
             on_press:
-                root.manager.transition.direction = "right"
-                root.manager.transition.duration = 1
-                root.manager.current = "MenuScreen"
-
+                root.screen_transition("MenuScreen", "right")
 
 <DayScreen>
+    date: date.__self__
+    gl: gl.__self__
     BoxLayout:
         orientation: "vertical"
         Label:
+            id: date
             text: "Date"
         BoxLayout:
             orientation: "horizontal"
@@ -511,78 +506,26 @@
             Label:
                 text: "Wallet"
         GridLayout:
+            id: gl
             cols: 6
 
         BoxLayout:
             orientation: "horizontal"
             BubbleButton:
                 background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.screen_transition("ScheduleScreen", direction="right")
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
                 text: "Add Transaction"
                 on_press:
                     root.add_transaction()
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: "Back"
-                on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "ScheduleScreen"
-
-<BudgetScreen>
-    on_enter: root.load_budgets(app)
-    BoxLayout:
-        orientation: 'vertical'
-        Label:
-            text: 'Budgets'
-        BoxLayout:
-            orientation: 'horizontal'
-            Label:
-                text: 'Budget ID'
-            Label:
-                text: 'Wallet Name'
-            Label:
-                text: 'Budget Name'
-            Label:
-                text: 'Amount'
-        GridLayout:
-            cols: 4
-        BoxLayout:
-            orientation: 'horizontal'
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: 'Add Budget'
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: 'Back'
-                on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "MenuScreen"
-
-
-
-
-<AddBudgetScreen>
-    gl: gl.__self__
-    BoxLayout:
-        orientation: 'vertical'
-        Label:
-            text: 'New Budget'
-        GridLayout:
-            id: gl
-            cols: 2
-            BubbleButton:
-                on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "WalletsScreen"  
-
-
-
 
 <WalletsScreen>
-    on_enter: root.load_wallets(app)
     gl: gl.__self__
+    on_enter: 
+        root.load_wallets()
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -611,16 +554,13 @@
                 background_color: (4, 0, 100, 5)
                 text: 'Back'
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "MenuScreen"
+                    root.screen_transition("MenuScreen", "right")
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: 'Add Wallet'
                 on_press:
-                    root.manager.transition.direction = "left"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "AddWalletScreen"
+                    root.screen_transition("AddWalletScreen")
+
 
 <AddWalletScreen>
     wallet_name: wallet_name.__self__
@@ -658,52 +598,87 @@
                 background_color: (4, 0, 100, 5)
                 text: 'Back'
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "WalletsScreen"                 
+                    root.screen_transition("WalletsScreen", "right")        
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: 'Add To Wallets'
                 on_press:
-                    root.add_wallet(app)
+                    root.add_wallet()
 
-
-
-<GoalsScreen>
-    on_enter: root.load_goals(app)
-    gl: gl.__self__
+<ViewWalletScreen>
+    wallet_name: wallet_name.__self__
+    wallet_amount: wallet_amount.__self__
+    wallet_description: wallet_description.__self__
+    transaction_count: transaction_count.__self__
+    date_created: date_created.__self__
     BoxLayout:
         orientation: 'vertical'
         Label:
-            text: 'Goals'
-        BoxLayout:
-            orientation: 'horizontal'
+            text: 'View Wallet'
+        GridLayout:
+            cols: 2
             Label:
-                text: 'Goal ID'
+                text: "Date Created"
+            Label:
+                id: date_created
+                text: ''
+                halign: 'center'
             Label:
                 text: 'Wallet Name'
             Label:
-                text: 'Goal Amount'
+                id: wallet_name
+                text: ""
+                halign: "center"                    
             Label:
-                text: 'Description'
-        GridLayout:
-            id: gl
-            cols: 4
+                text: 'Wallet Amount'
+            Label:
+                id: wallet_amount
+                text: ''
+                halign: "center"    
+            Label:
+                text: 'Wallet Description'
+            Label:
+                id: wallet_description
+                text: ''    
+                halign: "center"
+            Label:
+                text: "Transaction Count"
+            Label:
+                id: transaction_count
+                text: ""
+                halign: "center"
         BoxLayout:
-            orientation: 'horizontal'        
-            BubbleButton:
-                background_color: (4, 0, 100, 5)
-                text: 'Add Goal'
-                on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.transition.duration = 1
-                    root.manager.current = 'AddGoalScreen'
+            orientation: 'horizontal'
             BubbleButton:
                 background_color: (4, 0, 100, 5)
                 text: 'Back'
                 on_press:
-                    root.manager.transition.direction = "right"
-                    root.manager.transition.duration = 1
-                    root.manager.current = "MenuScreen"
+                    root.screen_transition("WalletsScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Delete Wallet'
+                on_press:
+                    root.delete_wallet()
 
-        
+<AnalysisScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Analysis Screen in Progress
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("MenuScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Email Data'
+                on_press:
+                    root.send_email()
+
+
+
+            
+            
