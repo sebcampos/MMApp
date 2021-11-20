@@ -1,11 +1,10 @@
-import os 
-import pandas as pd
+import os
 import datetime
 import random
 import json
 import sqlite3
-from credentials import end_point_address, encryption, create_keys_rsa, encrypt_packet, decrypt_packet
-
+from packets import end_point_address, encryption, create_keys_rsa, build_packet
+import base64
 
 import kivy
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -19,6 +18,7 @@ from kivy.app import App
 
 
 kivy.require('2.0.0')
+
 Builder.load_file("main.kv")
 
 class User():
@@ -32,6 +32,16 @@ class User():
         self.delete_transaction_dict = None
         self.add_wallet_dict = None
         self.delete_wallet_dict = None
+        self.conn = sqlite3.connect("user.db")
+        self.cur = self.conn.cursor()
+        self.cur.execute("""
+            CREATE TABLE if not exists user_table(
+                user_id int,
+                user_email text,
+                username text,
+                phone_number text
+            )""")
+        self.conn.commit()
         self.freq_map = {
             "Once": 1,
             "Daily": 1000,
@@ -42,25 +52,13 @@ class User():
             "Annually": 360
         }
 
-         
-    def __repr__(self):
-        self.dataframe = pd.DataFrame({
-            "user_id": [self.user_id],
-            "username": [self.username],
-            "user_email": [self.email], 
-            "phone_number": [self.phone_number]
-        })
-        return str(self.dataframe)
     def write_self(self):
-        self.dataframe = pd.DataFrame({
-            "user_id": [self.user_id],
-            "username": [self.username],
-            "user_email": [self.email], 
-            "phone_number": [self.phone_number]
-        })
-        conn = sqlite3.connect("user.db")
-        self.dataframe.to_sql("user_table", if_exists='replace', con=conn)
-        
+        self.cur.execute(f"""
+            INSERT INTO user_table (user_id, user_email, username, phone_number)
+            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phone_number}')
+            """)
+        self.conn.commit()
+             
 class Screen(Screen):
     def __init__(self, name):
         self.previous_screen = None
@@ -131,16 +129,16 @@ class Screen(Screen):
         self.prompt(f"{self.name}Error",response)
 
     def request_response(self, req, response):
-        response = json.loads(response)     
+        response = json.loads(response)
+        print(response)  
         if "Success" in response.keys():
             if response["Success"] == 'registration complete':
                 #register user
                 global app_user
-                data = decrypt_packet(response)
-                app_user.user_id = data["id"]
+                app_user.user_id = response["id"]
                 #save keys
                 with open(f"{app_user.username}_privkey", "w") as f:
-                    f.write(data['privkey'])
+                    f.write(response['privkey'])
                 with open(f"{app_user.username}_pubkey", "w") as f:
                     f.write(response['pubkey'])
                 for w in self.ids.values():
@@ -151,10 +149,9 @@ class Screen(Screen):
                 app_user.write_self()
             elif response["Success"] == "User logged in with ID and password":
                 #retrieve tables from end point and save to app_user
-                packet = decrypt_packet(response, user=app_user.username)
-                app_user.transactions = pd.DataFrame.from_dict(json.loads(packet["Transactions"]))
-                app_user.schedule = pd.DataFrame.from_dict(json.loads(packet["Schedule"]))
-                app_user.wallets = pd.DataFrame.from_dict(json.loads(packet["Wallets"]))
+                app_user.transactions = json.loads(response["Transactions"])
+                app_user.schedule = json.loads(response["Schedule"])
+                app_user.wallets = json.loads(response["Wallets"])
                 #transition to main menu
                 self.screen_transition("MenuScreen")
             elif response["Success"] == "Transaction added":
@@ -429,8 +426,9 @@ class RegistrationScreen(Screen):
         user_inputs = {i:v.text for i,v in self.ids.items()}
         if self.check_user_inputs(user_inputs, registration=True) == True:
             global app_user
+            data = user_inputs.copy()
             app_user = User("None", user_inputs["phone_number"], user_inputs["email"], user_inputs["username"])
-            packet = encryption(json.dumps(user_inputs))
+            packet = build_packet(data)
             self.send_request(packet, "register user")
 
         else:
@@ -442,13 +440,14 @@ class LoginScreen(Screen):
         packet = user_inputs.copy()
         if self.check_user_inputs(user_inputs) == True:
             global app_user
-            df = pd.read_sql(f"SELECT * FROM user_table", con=sqlite3.connect("user.db"))
-            app_user = User(df.user_id.item(), df.phone_number.item(), df.user_email.item(), df.username.item())
-            app_user.password = user_inputs["password"]
-            packet = encrypt_packet(packet, user=app_user.username)
-            packet["USER"] = app_user.username
-            packet["USERID"] = app_user.user_id
-            self.send_request(json.dumps(packet), "login")
+            conn = sqlite3.connect("user.db")
+            cur = conn.cursor()
+            row = cur.execute("SELECT * FROM user_table").fetchall()[0]
+            app_user = User(row[0], row[3], row[1], row[2])
+            app_user.password = base64.b64encode(encryption(user_inputs["password"], pubkey=f"{app_user.username}_pubkey", privkey=f"{app_user.username}_privkey")).decode()
+            packet = build_packet(packet, app_user.username)
+            print(packet)
+            self.send_request(packet, "login")
 
 class MenuScreen(Screen):
     def log_out(self):
@@ -465,10 +464,11 @@ class TransactionsScreen(Screen):
         gl.clear_widgets()
         gl.size_hint_y = len(app_user.transactions) / 2.5
         #iterate over the transactions dataframe and add values to the kivy Gridlayout object
-        for row in app_user.transactions.values:
-            gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-            for cell in row[1:]:
-                gl.add_widget(Label(text=str(cell)))
+        for row in app_user.transactions:
+            for row in app_user.transactions[row]:
+                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+                for cell in row[1:]:
+                    gl.add_widget(Label(text=str(cell)))
     
     def sort_transactions(self, button):
         #clear the current widgets on gl
@@ -495,17 +495,15 @@ class AddTransactionScreen(Screen):
             self.ids["calender"].text = f"{date}"
             wd = self.ids["wallet_dropdown"]
             wd.clear_widgets()
-            for i in app_user.wallets["wallet_name"].tolist():
+            for i in app_user.wallets["wallet_name"].values():
                 wd.add_widget(Button(text=f"{i}", size_hint_y=None, on_press= lambda x: wd.select(x.text)))
         def add_transaction(self):
             user_inputs = {i:v.text for i,v in self.ids.items() if i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown"}
             if self.check_user_inputs(user_inputs) == True:
                 #build packet
-                user_inputs["user_id"] = app_user.user_id
+                user_inputs["user_id"] = base64.b64encode(encryption(str(app_user.user_id), pubkey=f"{app_user.username}_pubkey", privkey=f"{app_user.username}_privkey")).decode()
                 user_inputs["user_password"] = app_user.password
                 packet = user_inputs.copy()
-                #encrypt packet
-                packet = encrypt_packet(packet, user=app_user.username)
                 packet["update"] = "add transaction"
                 packet["user_name"] = app_user.username
                 #create transaction dictionary 
@@ -546,7 +544,7 @@ class ViewTransactionScreen(Screen):
         #create a copy of the data
         packet = data.copy()
         #send encrypted packet
-        packet = encrypt_packet(packet, user=app_user.username)
+        packet = build_packet(packet, user=app_user.username)
         packet["user_name"] = app_user.username
         packet["update"] = "delete transaction"
         app_user.delete_transaction_dict = data
@@ -627,6 +625,16 @@ class AnalysisScreen(Screen):
 
 class MonManApp(App):
     def build(self):
+        conn = sqlite3.connect("user.db")
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE if not exists user_table(
+                user_id int,
+                user_email text,
+                username text,
+                phone_number text
+            )""")
+        conn.commit()
         self.sm = ScreenManager()
         self.sm.add_widget(RegistrationScreen(name="RegistrationScreen"))
         self.sm.add_widget(LoginScreen(name="LoginScreen"))
@@ -639,10 +647,7 @@ class MonManApp(App):
         self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
         self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
         self.sm.add_widget(ViewWalletScreen(name="ViewWalletScreen"))
-        if "user.db" in os.listdir():
-            self.sm.current =  "LoginScreen"
-        else:
-            self.sm.current = "RegistrationScreen"
+        self.sm.current =  "LoginScreen"
         return self.sm
 
 if __name__ ==  "__main__":

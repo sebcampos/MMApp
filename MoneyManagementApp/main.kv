@@ -1,0 +1,684 @@
+<RegistrationScreen>:
+    username: username.__self__
+    email: email.__self__
+    password: password.__self__
+    confirmation: confirmation.__self__
+    phone_number: phone_number.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Registration'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        GridLayout:
+            cols: 2
+            Label:
+                text:'Username'
+            TextInput:
+	            multiline: False
+                id: username
+                halign: "center"
+            Label:
+                text:'Email'
+            TextInput:
+	            multiline: False
+                id: email
+                halign: "center"
+            Label:
+                text: 'Password'
+            TextInput:
+	            multiline: False
+                id: password
+                password: True
+                halign: "center"
+            Label:
+                text: 'Password (confirmation)'
+            TextInput:
+	            multiline: False
+                id: confirmation
+                password: True
+                halign: "center"
+            Label:
+                text: 'Phone number'
+            TextInput:
+	            multiline: False
+                id: phone_number
+                halign: "center"                
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Login"
+                on_press:
+                    root.screen_transition("LoginScreen")
+            
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Register"
+                on_press:
+                    root.register()
+
+
+<LoginScreen>:
+    username: username.__self__
+    password: password.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Login'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        GridLayout:
+            cols: 2
+
+            Label:
+                text:'Username'
+            
+            TextInput:
+	            multiline: False
+                id: username
+                halign: "center"                
+        
+            Label:
+                text: 'Password'
+            
+            TextInput:
+	            multiline: False
+                id: password
+                password: True
+                halign: "center"                        
+
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Login"
+            on_press:
+                root.login()
+       
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Forgot Password"
+                on_press:
+                    root.reset_password()
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "New User"
+                on_press:
+                    root.screen_transition("RegistrationScreen", direction='right')
+
+<MenuScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Menu'
+            font_size: self.width / 20
+            background_color: (.4, .5, 100, .3)
+            canvas.before:
+                Color:
+                    rgba: self.background_color
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        BubbleButton:
+            text: 'Transactions'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.screen_transition("TransactionsScreen")
+                
+
+        BubbleButton:
+            text: 'Schedule'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.manager.get_screen("ScheduleScreen").clear_calender()
+                root.manager.get_screen("ScheduleScreen").build_calender()
+                root.screen_transition("ScheduleScreen")
+
+
+        BubbleButton:
+            text: 'Wallets'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.screen_transition("WalletsScreen")
+        
+        BubbleButton:
+            text: 'Analysis'
+            background_color: (.4, .5, 100, .3)
+            on_press:
+                root.screen_transition("AnalysisScreen")
+
+
+        
+        BubbleButton:
+            background_color: (4, 0, 100, 5)
+            size_hint: 0.5, 0.4
+            pos_hint: {'x':.25 , 'y': .5}
+            text: "Logout"
+            on_press:
+                root.log_out()
+
+<TransactionsScreen>
+    on_enter: root.display_transactions()
+    gl: gl.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Transactions'
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "ID"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Date"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Amount"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Loc"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Type"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Tag"
+                on_press: root.sort_table(self)
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Wallet"
+                on_press: root.sort_table(self)
+        ScrollView:
+            bar_inactive_color: (1, 1, 1, 1)
+            scroll_type: ["bars"]
+            bar_color: (1,1,1,1)
+            bar_width: 10
+            GridLayout:
+                id: gl
+                cols: 7        
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Return to Menu"
+                on_press:
+                    root.screen_transition("MenuScreen", direction="right")
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.manager.get_screen("AddTransactionScreen").previous_screen = "TransactionsScreen"
+                    root.manager.get_screen("AddTransactionScreen").build_screen()
+                    root.screen_transition("AddTransactionScreen")
+
+<AddTransactionScreen>
+    transaction_type: transaction_type.__self__
+    dropdown: dropdown.__self__
+    location: location.__self__
+    amount: amount.__self__
+    tag: tag.__self__
+    wallet: wallet.__self__
+    wallet_dropdown: wallet_dropdown.__self__
+    calender: calender.__self__
+    frequency: frequency.__self__
+    frequency_dropdown: frequency_dropdown.__self__
+    back_button: back_button.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Add Transaction'
+        GridLayout:
+            cols: 2
+            Label:
+                text: 'Location'
+            
+            TextInput:
+                id: location
+	            multiline: False
+                halign: "center"
+
+            Label:
+                text: 'Date'
+            
+            Button:
+                id: calender
+                text: 'Calender'
+                on_press: root.mini_calender()
+
+            Label:
+                text: 'Frequency'
+            
+            Button:
+                id: frequency
+                text: "Once"
+                on_parent: frequency_dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_press: frequency_dropdown.open(self)
+                DropDown:
+                    id: frequency_dropdown
+                    on_select: frequency.text = f'{args[1]}' 
+                    
+                    Button:
+                        text: "Once"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Once")
+                    Button:
+                        text: "Daily"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Daily")
+                    Button:
+                        text: "Weekly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Weekly")
+                    Button:
+                        text: "Bi-Weekly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Bi-Weekly")
+                    Button:
+                        text: "Monthly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Monthly")
+                    Button:
+                        text: "Quarterly"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Quarterly")                    
+                    Button:
+                        text: "Annually"
+                        size_hint_y: None
+                        on_press: frequency_dropdown.select("Annually")
+            Label:
+                text: 'Amount'
+            
+            TextInput:
+                id: amount
+	            multiline: False
+                halign: "center"
+
+            Label:
+                text: 'Transaction Type'
+            
+            Button:
+                id: transaction_type
+                text: "Withdrawl"
+                on_parent: dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_press: dropdown.open(self)
+                DropDown:
+                    id: dropdown
+                    on_select: transaction_type.text = f'{args[1]}'
+                    
+                    Button:
+                        text: "Withdrawl"
+                        size_hint_y: None
+                        on_press: dropdown.select("Withdrawl")
+                    Button:
+                        text: "Deposit"
+                        size_hint_y: None
+                        on_press: dropdown.select("Deposit")
+
+            Label:
+                text: 'Tag'
+            
+            TextInput:
+                id: tag
+                text: 'No Tag'
+                multiline: False
+                halign: "center"
+            Label:
+                text: 'Wallet Name'
+            
+            Button:
+                id: wallet
+                text: "Standard Wallet"
+                on_parent: wallet_dropdown.dismiss()
+                size: self.parent.children[0].size
+                on_press: wallet_dropdown.open(self)
+                DropDown:
+                    id: wallet_dropdown
+                    on_select: wallet.text = f'{args[1]}'
+
+                                
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                id: back_button
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.screen_transition(root.previous_screen, "right")
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.add_transaction()
+
+
+<ViewTransactionScreen>
+    transaction_id: transaction_id.__self__
+    date: date.__self__
+    amount: amount.__self__
+    location: location.__self__
+    type: type.__self__
+    tag: tag.__self__
+    wallet: wallet.__self__
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "Transaction Details"
+        GridLayout:
+            cols: 2
+            Label:
+                text: "Transaction ID"
+            Label:
+                id: transaction_id
+                text: ""
+            Label:
+                text: "Date"
+            Label:
+                id: date
+                text: ""
+            Label:
+                text: "Amount"
+            Label:
+                id: amount
+                text: ""
+            Label:
+                text: "Location"
+            Label:
+                id: location
+                text: ""
+            Label:
+                text: "Type"
+            Label:
+                id: type
+                text: ""
+            Label:
+                text: "Tag"
+            Label:
+                id: tag
+                text: ""
+            Label:
+                text: "Wallet"
+            Label:
+                id: wallet
+                text: ""
+        BoxLayout:
+            orientation: "horizontal"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.screen_transition(root.previous_screen, "down")
+
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Delete"
+                on_press:
+                    root.delete_transaction()
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Schedule Transaction"
+                on_press:
+                    root.schedule_transaction()
+
+<ScheduleScreen>
+    schedule_label: schedule_label.__self__
+    year_label: year_label.__self__
+    gl_calender: gl_calender.__self__
+    current_month: current_month.__self__
+    dynamic_button: dynamic_button.__self__
+    bl: bl.__self__
+    BoxLayout:
+        id: bl
+        orientation: 'vertical'
+        Label:
+            id: schedule_label
+            text: 'Schedule'
+            size_hint_y: .10
+        Label:
+            id: year_label
+            size_hint_y: .2
+        BoxLayout:
+            size_hint_y: .2 
+            orientation: 'horizontal'
+            BubbleButton: 
+                text: "<"
+                on_press:
+                    root.change_month(self)
+            Label:
+                id: current_month
+                text: ""
+            BubbleButton:
+                text: ">"
+                on_press:
+                    root.change_month(self)
+        GridLayout:
+            id: gl_calender
+            cols: 7
+        BubbleButton:
+            id: dynamic_button
+            background_color: (4, 0, 100, 5)
+            text: "Return To Menu"
+            on_press:
+                root.screen_transition("MenuScreen", "right")
+
+<DayScreen>
+    date: date.__self__
+    gl: gl.__self__
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            id: date
+            text: "Date"
+        BoxLayout:
+            orientation: "horizontal"
+            Label:
+                text: "Transaction ID"
+            Label:
+                text: "Frequency"
+            Label:
+                text: "Scheduled on"
+            Label:
+                text: "Transaction Type"
+            Label:
+                text: "Amount"                
+            Label:
+                text: "Wallet"
+        GridLayout:
+            id: gl
+            cols: 6
+
+        BoxLayout:
+            orientation: "horizontal"
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Back"
+                on_press:
+                    root.screen_transition("ScheduleScreen", direction="right")
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: "Add Transaction"
+                on_press:
+                    root.add_transaction()
+
+<WalletsScreen>
+    gl: gl.__self__
+    on_enter: 
+        root.load_wallets()
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Wallets'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Wallet ID'
+            Label:
+                text: 'Wallet Name'
+            Label:
+                text: 'Wallet Amount'
+            Label:
+                text: 'Description'
+        ScrollView:
+            bar_inactive_color: (1, 1, 1, 1)
+            scroll_type: ["bars"]
+            bar_color: (1,1,1,1)
+            bar_width: 10
+            GridLayout:
+                id: gl
+                cols: 4
+        BoxLayout:
+            orientation: 'horizontal'        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("MenuScreen", "right")
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Add Wallet'
+                on_press:
+                    root.screen_transition("AddWalletScreen")
+
+
+<AddWalletScreen>
+    wallet_name: wallet_name.__self__
+    wallet_amount: wallet_amount.__self__
+    wallet_description: wallet_description.__self__
+    gl: gl.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'New Wallet'
+        GridLayout:
+            id: gl
+            cols: 2
+            Label:
+                text: 'Wallet Name'
+            TextInput:
+                id: wallet_name
+                text: ""
+                halign: "center"                    
+            Label:
+                text: 'Wallet Amount'
+            TextInput:
+                id: wallet_amount
+                text: ''
+                halign: "center"    
+            Label:
+                text: 'Wallet Description'
+            TextInput:
+                id: wallet_description
+                text: ''    
+                halign: "center"
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("WalletsScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Add To Wallets'
+                on_press:
+                    root.add_wallet()
+
+<ViewWalletScreen>
+    wallet_name: wallet_name.__self__
+    wallet_amount: wallet_amount.__self__
+    wallet_description: wallet_description.__self__
+    transaction_count: transaction_count.__self__
+    date_created: date_created.__self__
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'View Wallet'
+        GridLayout:
+            cols: 2
+            Label:
+                text: "Date Created"
+            Label:
+                id: date_created
+                text: ''
+                halign: 'center'
+            Label:
+                text: 'Wallet Name'
+            Label:
+                id: wallet_name
+                text: ""
+                halign: "center"                    
+            Label:
+                text: 'Wallet Amount'
+            Label:
+                id: wallet_amount
+                text: ''
+                halign: "center"    
+            Label:
+                text: 'Wallet Description'
+            Label:
+                id: wallet_description
+                text: ''    
+                halign: "center"
+            Label:
+                text: "Transaction Count"
+            Label:
+                id: transaction_count
+                text: ""
+                halign: "center"
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("WalletsScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Delete Wallet'
+                on_press:
+                    root.delete_wallet()
+
+<AnalysisScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Analysis Screen in Progress'
+        BoxLayout:
+            orientation: 'horizontal'
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Back'
+                on_press:
+                    root.screen_transition("MenuScreen", "right")        
+            BubbleButton:
+                background_color: (4, 0, 100, 5)
+                text: 'Email Data'
+                on_press:
+                    root.send_email()
+
+
+
+            
+            
