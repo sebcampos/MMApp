@@ -3,15 +3,16 @@ import datetime
 
 #SQLite3
 class DB():
-    def __init__(self):
-        self.conn = sqlite3.connect("MM_sqlite.db")
+    def __init__(self, path="./"):
+        self.conn = sqlite3.connect(f"{path}MM_sqlite.db")
         self.cur = self.conn.cursor()
         self.cur.execute("""
             CREATE TABLE if not exists user_table(
                 userid int,
                 useremail text,
                 username text,
-                phonenumber text               
+                phonenumber text,
+                user_password text               
             )""")
         self.cur.execute("""
             CREATE TABLE if not exists transactions(

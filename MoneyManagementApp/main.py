@@ -3,7 +3,7 @@ import datetime
 import random
 import json
 import sqlite3
-from packets import end_point_address, encryption, create_keys_rsa, build_packet
+from packets import end_point_address, encryption, create_keys_rsa, build_packet, recieve_packet
 import base64
 
 import kivy
@@ -22,12 +22,12 @@ kivy.require('2.0.0')
 Builder.load_file("main.kv")
 
 class User():
-    def __init__(self, user_id, phone_number, email, username):
+    def __init__(self, user_id, phone_number, email, username, password):
         self.user_id = user_id
         self.username = username
         self.email = email
         self.phone_number = phone_number
-        self.password = None
+        self.password = password
         self.add_new_transaction_dict = None
         self.delete_transaction_dict = None
         self.add_wallet_dict = None
@@ -39,7 +39,8 @@ class User():
                 user_id int,
                 user_email text,
                 username text,
-                phone_number text
+                phone_number text,
+                user_password text
             )""")
         self.conn.commit()
         self.freq_map = {
@@ -51,11 +52,13 @@ class User():
             "Quarterly": 90,
             "Annually": 360
         }
+    def __repr__(self):
+        return f"username: {self.username}\nid: {self.user_id}\nemail: {self.email}\nphonenumber {self.phone_number}"
 
     def write_self(self):
         self.cur.execute(f"""
-            INSERT INTO user_table (user_id, user_email, username, phone_number)
-            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phone_number}')
+            INSERT INTO user_table (user_id, user_email, username, phone_number, user_password)
+            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phone_number}', '{self.password}')
             """)
         self.conn.commit()
              
@@ -130,7 +133,7 @@ class Screen(Screen):
 
     def request_response(self, req, response):
         response = json.loads(response)
-        print(response)  
+        response = recieve_packet(response)
         if "Success" in response.keys():
             if response["Success"] == 'registration complete':
                 #register user
@@ -427,7 +430,7 @@ class RegistrationScreen(Screen):
         if self.check_user_inputs(user_inputs, registration=True) == True:
             global app_user
             data = user_inputs.copy()
-            app_user = User("None", user_inputs["phone_number"], user_inputs["email"], user_inputs["username"])
+            app_user = User("None", user_inputs["phone_number"], user_inputs["email"], user_inputs["username"], user_inputs["password"])
             packet = build_packet(data)
             self.send_request(packet, "register user")
 
@@ -443,10 +446,10 @@ class LoginScreen(Screen):
             conn = sqlite3.connect("user.db")
             cur = conn.cursor()
             row = cur.execute("SELECT * FROM user_table").fetchall()[0]
-            app_user = User(row[0], row[3], row[1], row[2])
-            app_user.password = base64.b64encode(encryption(user_inputs["password"], pubkey=f"{app_user.username}_pubkey", privkey=f"{app_user.username}_privkey")).decode()
-            packet = build_packet(packet, app_user.username)
+            app_user = User(row[0], row[3], row[1], row[2], row[4])
+            print(app_user)
             print(packet)
+            packet = build_packet(packet, app_user.username) 
             self.send_request(packet, "login")
 
 class MenuScreen(Screen):

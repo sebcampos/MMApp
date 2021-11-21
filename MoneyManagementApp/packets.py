@@ -38,23 +38,63 @@ def create_keys_rsa(username):
 
 def build_packet(data, user=False):
 	packet = {}
-	if user == True:
+	if user != False:
 		for key in data:
-			packet[key] = base64.b64encode(encryption(str(data[key]), pubkey=f"{user}_pubkey", privkey=f"{user}_privkey")).decode()
+			if len(data[key]) > 200:
+				packet[key] = []
+				i = 0
+				while True:
+					if i + 200 < len(data[key]):
+						packet[key].append(base64.b64encode(encryption(data[key][i:i+200], pubkey=f"{user}_pubkey", privkey=f"{user}_privkey")).decode())
+						i += 200
+					else:
+						packet[key].append(base64.b64encode(encryption(data[key][i:], pubkey=f"{user}_pubkey", privkey=f"{user}_privkey")).decode())
+						break
+			else:
+				packet[key] = base64.b64encode(encryption(str(data[key]), pubkey=f"{user}_pubkey", privkey=f"{user}_privkey")).decode()
+		packet['username'] = data["username"]
 		return json.dumps(packet)
 	elif user == False:
 		for key in data:
-			packet[key] = base64.b64encode(encryption(str(data[key]))).decode()
+			if len(data[key]) > 200:
+				packet[key] = []
+				i = 0
+				prev_i = 0
+				while True:
+					if i + 200 < len(data[key]):
+						packet[key].append(base64.b64encode(encryption(data[key][i:i+200])).decode())
+						i += 200
+					else:
+						packet[key].append(base64.b64encode(encryption(data[key][i:])).decode())
+						break
+			else:
+				packet[key] = base64.b64encode(encryption(str(data[key]))).decode()
 		return json.dumps(packet)
 
 
 def recieve_packet(data, user=False):
 	packet = {}
-	if user == True:
+	if user != False:
+		username = data["username"]
 		for key in data:
-			packet[key] = encryption(base64.b64decode(data[key]), encrypt=False, privkey=f"{user}_privkey")
+			if type(data[key]) == list:
+				new_string = ""
+				for i in data[key]:
+					new_string += encryption(base64.b64decode(i), encrypt=False, privkey=f"{username}_privkey")
+				packet[key] = new_string
+			else:
+				packet[key] = encryption(base64.b64decode(data[key]), encrypt=False, privkey=f"{username}_privkey")
 		return packet
 	elif user == False:
 		for key in data:
-			packet[key] = encryption(base64.b64decode(data[key]), encrypt=False)
+			if type(data[key]) == list:
+				new_string = ""
+				for i in data[key]:
+					new_string += encryption(base64.b64decode(i), encrypt=False)
+				packet[key] = new_string
+			else:
+				packet[key] = encryption(base64.b64decode(data[key]), encrypt=False)
 		return packet
+
+
+
