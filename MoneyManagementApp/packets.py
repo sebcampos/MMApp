@@ -76,6 +76,7 @@ def recieve_packet(data, user=False):
 	packet = {}
 	if user != False:
 		username = data["username"]
+		del data['username']
 		for key in data:
 			if type(data[key]) == list:
 				new_string = ""
@@ -95,6 +96,8 @@ def recieve_packet(data, user=False):
 			else:
 				packet[key] = encryption(base64.b64decode(data[key]), encrypt=False)
 		return packet
+
+
 
 
 

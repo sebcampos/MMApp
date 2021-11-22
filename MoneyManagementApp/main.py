@@ -36,11 +36,11 @@ class User():
         self.cur = self.conn.cursor()
         self.cur.execute("""
             CREATE TABLE if not exists user_table(
-                user_id int,
-                user_email text,
+                userid int,
+                useremail text,
                 username text,
-                phone_number text,
-                user_password text
+                phonenumber text,
+                password text
             )""")
         self.conn.commit()
         self.freq_map = {
@@ -57,7 +57,7 @@ class User():
 
     def write_self(self):
         self.cur.execute(f"""
-            INSERT INTO user_table (user_id, user_email, username, phone_number, user_password)
+            INSERT INTO user_table (userid, useremail, username, phonenumber, password)
             VALUES({self.user_id},'{self.email}','{self.username}', '{self.phone_number}', '{self.password}')
             """)
         self.conn.commit()
@@ -132,8 +132,7 @@ class Screen(Screen):
         self.prompt(f"{self.name}Error",response)
 
     def request_response(self, req, response):
-        response = json.loads(response)
-        response = recieve_packet(response)
+        response = recieve_packet(json.loads(response))
         if "Success" in response.keys():
             if response["Success"] == 'registration complete':
                 #register user
@@ -147,6 +146,7 @@ class Screen(Screen):
                 for w in self.ids.values():
                     w.text = ""
                 #transition to loginscreen
+                print(self)
                 self.screen_transition("LoginScreen")
                 #write to database
                 app_user.write_self()
@@ -447,8 +447,7 @@ class LoginScreen(Screen):
             cur = conn.cursor()
             row = cur.execute("SELECT * FROM user_table").fetchall()[0]
             app_user = User(row[0], row[3], row[1], row[2], row[4])
-            print(app_user)
-            print(packet)
+            packet["userid"] = str(app_user.userid)
             packet = build_packet(packet, app_user.username) 
             self.send_request(packet, "login")
 
@@ -626,18 +625,10 @@ class AnalysisScreen(Screen):
     def send_email(self):
         print("sending an email!")
 
-class MonManApp(App):
+class MMApp(App):
     def build(self):
         conn = sqlite3.connect("user.db")
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE if not exists user_table(
-                user_id int,
-                user_email text,
-                username text,
-                phone_number text
-            )""")
-        conn.commit()
+        cur = conn.cursor()       
         self.sm = ScreenManager()
         self.sm.add_widget(RegistrationScreen(name="RegistrationScreen"))
         self.sm.add_widget(LoginScreen(name="LoginScreen"))
@@ -654,4 +645,4 @@ class MonManApp(App):
         return self.sm
 
 if __name__ ==  "__main__":
-    MonManApp().run()
+    MMApp().run()
