@@ -23,10 +23,10 @@ Builder.load_file("main.kv")
 
 class User():
     def __init__(self, user_id, phone_number, email, username, password):
-        self.user_id = user_id
+        self.userid = user_id
         self.username = username
         self.email = email
-        self.phone_number = phone_number
+        self.phonenumber = phone_number
         self.password = password
         self.add_new_transaction_dict = None
         self.delete_transaction_dict = None
@@ -102,7 +102,7 @@ class Screen(Screen):
         self.manager.transition.direction = direction
         self.manager.transition.duration = duration
         self.manager.current = screen
-    
+        
     def load_transaction(self, button):
         self.manager.get_screen("ViewTransactionScreen").previous_screen = self.name
         self.screen_transition("ViewTransactionScreen", direction='up')
@@ -146,56 +146,52 @@ class Screen(Screen):
                 for w in self.ids.values():
                     w.text = ""
                 #transition to loginscreen
-                print(self)
                 self.screen_transition("LoginScreen")
                 #write to database
                 app_user.write_self()
             elif response["Success"] == "User logged in with ID and password":
                 #retrieve tables from end point and save to app_user
-                app_user.transactions = json.loads(response["Transactions"])
-                app_user.schedule = json.loads(response["Schedule"])
-                app_user.wallets = json.loads(response["Wallets"])
+                app_user.transactions = json.loads(response["transactions"])
+                app_user.schedule = json.loads(response["scheduled"])
+                app_user.wallets = json.loads(response["wallets"])
                 #transition to main menu
                 self.screen_transition("MenuScreen")
             elif response["Success"] == "Transaction added":
-                transaction_id = len(app_user.transactions.transaction_id) 
-                transaction_df = pd.DataFrame({
-                    "transaction_id": [int(transaction_id)],
-                    "transaction_date": [app_user.add_new_transaction_dict["calender"]],
-                    "amount": [float(app_user.add_new_transaction_dict["amount"])],
-                    "location": [app_user.add_new_transaction_dict["location"]],
-                    "transaction_type": [app_user.add_new_transaction_dict["transaction_type"]],
-                    "transaction_tag": [app_user.add_new_transaction_dict["tag"]],
-                    "wallet_name": [app_user.add_new_transaction_dict["wallet"]]
-                })
-                #add to transaction table
-                app_user.transactions = pd.concat([app_user.transactions, transaction_df])
-                app_user.transactions.transaction_id = app_user.transactions.transaction_id.astype('int')
-                app_user.transactions.reset_index(inplace=True, drop=True)
-                #check if transaction is scheduled for today
+                #transaction_id and wallet index
+                transaction_id = len(app_user.transactions["transaction_id"])
+                wallet_index = None
+                for i,v in app_user.wallets["wallet_name"].items():
+                    if v == app_user.add_new_transaction_dict["wallet"]:
+                        wallet_index = i
+                        break
+                #add to transactions table
+                app_user.transactions["transaction_id"][str(transaction_id)] = transaction_id 
+                app_user.transactions["amount"][str(transaction_id)] = app_user.add_new_transaction_dict["amount"]
+                app_user.transactions["location"][str(transaction_id)] = app_user.add_new_transaction_dict["location"]
+                app_user.transactions["transaction_date"][str(transaction_id)] = app_user.add_new_transaction_dict["calender"]
+                app_user.transactions["wallet_name"][str(transaction_id)] = app_user.add_new_transaction_dict["wallet"]
+                app_user.transactions["transaction_type"][str(transaction_id)] = app_user.add_new_transaction_dict["transaction_type"]
+                app_user.transactions["transaction_tag"][str(transaction_id)] = app_user.add_new_transaction_dict["tag"]
+                #add to wallet transaction counter
+                app_user.wallets["transaction_count"][wallet_index] += 1
                 if app_user.add_new_transaction_dict["calender"] == str(datetime.datetime.today().date()):
-                    #subtract from wallet
+                    #check if transaction is scheduled for today
                     if app_user.add_new_transaction_dict["transaction_type"] == "Withdrawl":
-                        app_user.wallets.loc[app_user.wallets.wallet_name == app_user.add_new_transaction_dict["wallet"], "wallet_amount"] -= float(app_user.add_new_transaction_dict["amount"])
-                    #add to wallet
+                        ##add from wallet
+                        app_user.wallets["wallet_amount"][wallet_index] -= float(app_user.add_new_transaction_dict["amount"])
                     elif app_user.add_new_transaction_dict["transaction_type"] == "Deposit":
-                        app_user.wallets.loc[app_user.wallets.wallet_name == app_user.add_new_transaction_dict["wallet"], "wallet_amount"] += float(app_user.add_new_transaction_dict["amount"])
-                #schedule the transaction
+                        ##subtract from wallet
+                        app_user.wallets["wallet_amount"][wallet_index] += float(app_user.add_new_transaction_dict["amount"])
                 if app_user.add_new_transaction_dict["frequency"] != "Daily" and app_user.add_new_transaction_dict["calender"] != str(datetime.datetime.today().date()):
-                    schedule_df = pd.DataFrame({
-                        "transaction_id": [int(transaction_id)],
-                        "frequency": [app_user.freq_map[app_user.add_new_transaction_dict['frequency']]],
-                        "scheduled_date": [app_user.add_new_transaction_dict["calender"]],
-                        "next_day": [datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d") + datetime.timedelta(days=app_user.freq_map[app_user.add_new_transaction_dict['frequency']])],
-                        "amount": [app_user.add_new_transaction_dict["amount"]],
-                        "transaction_type": [app_user.add_new_transaction_dict["transaction_type"]],
-                        "wallet_name": [app_user.add_new_transaction_dict["wallet"]],
-                        "added_today": [True]
-                    })
-                    app_user.schedule = pd.concat([app_user.schedule, schedule_df])
-                    app_user.transactions.reset_index(inplace=True, drop=True)
-                    app_user.schedule.transaction_id = app_user.schedule.transaction_id.astype('int')
-                    app_user.schedule.frequency = app_user.schedule.frequency.astype('int')
+                    #schedule the transaction
+                    app_user.schedule["transaction_id"][str(transaction_id)] = str(transaction_id)
+                    app_user.schedule["frequency"][str(transaction_id)] = app_user.freq_map[app_user.add_new_transaction_dict['frequency']]
+                    app_user.schedule["scheduled_date"][str(transaction_id)] = app_user.add_new_transaction_dict["calender"]
+                    app_user.schedule["next_day"][str(transaction_id)] = datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d") + datetime.timedelta(days=app_user.freq_map[app_user.add_new_transaction_dict['frequency']])
+                    app_user.schedule["amount"][str(transaction_id)] = app_user.add_new_transaction_dict["amount"]
+                    app_user.schedule["transaction_type"][str(transaction_id)] = app_user.add_new_transaction_dict["transaction_type"]
+                    app_user.schedule["wallet_name"][str(transaction_id)] = app_user.add_new_transaction_dict["wallet"]
+                #clear inputs
                 for i,v in self.ids.items():
                     if i != "transaction_type" and i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown" and i != "back_button":
                         v.text = ""
@@ -203,40 +199,69 @@ class Screen(Screen):
                 self.prompt("Success","Transaction Added")
                 
             elif response["Success"] == "Transaction deleted, Wallet updated, Schedule updated":
-                #drop row from dataframe
-                app_user.transactions.drop(app_user.transactions.loc[app_user.transactions.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
+                wallet_index = None
+                for i,v in app_user.wallets["wallet_name"].items():
+                    if v == app_user.delete_transaction_dict["wallet_name"]:
+                        wallet_index = i
+                        break
+                #delete transaction
+                for column in app_user.transactions:
+                    del app_user.transactions[column][app_user.delete_transaction_dict["transaction_id"]]
                 #decrement all ids greater than current by 1
-                app_user.transactions.loc[app_user.transactions.transaction_id > int(app_user.delete_transaction_dict["transaction_id"]), "transaction_id"] -= 1
+                for column in app_user.transactions:
+                    for key in list(app_user.transactions[column].keys()):
+                        if int(key) > int(app_user.delete_transaction_dict["transaction_id"]):
+                            app_user.transactions[column][str(int(key) - 1)] = app_user.transactions[column].pop(key)
+                #decrement transaction count
+                app_user.wallets["transaction_count"][wallet_index] -= 1
                 #return reverse transaction from wallet
                 if app_user.delete_transaction_dict["transaction_type"] == "Withdrawl":
                     #if withdrawl deleted return the amount to the wallet
-                    app_user.wallets.loc[app_user.wallets.wallet_name == app_user.delete_transaction_dict["wallet_name"], "wallet_amount"] += float(app_user.delete_transaction_dict["amount"])
+                    app_user.wallets["wallet_amount"][wallet_index] += float(app_user.delete_transaction_dict["amount"])
                 elif app_user.delete_transaction_dict["transaction_type"] == "Deposit":
                     #if deposit deleted subtract amount from wallet
-                    app_user.wallets.loc[app_user.wallets.wallet_name == app_user.delete_transaction_dict["wallet_name"], "wallet_amount"] += float(app_user.delete_transaction_dict["amount"])
+                    app_user.wallets["wallet_amount"][wallet_index] -= float(app_user.delete_transaction_dict["amount"])
                 #delete transaction from the schedule
-                if  int(app_user.delete_transaction_dict["transaction_id"]) in app_user.schedule.transaction_id.tolist():
-                    app_user.schedule.drop(app_user.schedule.loc[app_user.schedule.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
+                if app_user.delete_transaction_dict["transaction_id"] in app_user.schedule["transaction_id"].keys():
+                    for column in app_user.schedule:
+                        del app_user.schedule[column][str(app_user.delete_transaction_dict["transaction_id"])]
+
+                #app_user.delete_transaction_dict["transaction_id"] in app_user.schedule.transaction_id.tolist():
+                    #app_user.schedule.drop(app_user.schedule.loc[app_user.schedule.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
                 #clear screen
                 for widget in self.ids.values():
                     widget.text = ""
                 self.prompt("Success", response["Success"])
             elif response["Success"] == "New Wallet added":
-                df = pd.DataFrame({
-                    "wallet_id": [len(app_user.wallets)],
-                    "wallet_name": [app_user.add_wallet_dict["wallet_name"]],
-                    "wallet_amount": [app_user.add_wallet_dict["wallet_amount"]],
-                    "short_description": [app_user.add_wallet_dict["wallet_description"]],
-                    "wallet_created_date": [str(datetime.datetime.now().date())],
-                    "transaction_count": [0]
-                })
-                app_user.wallets = pd.concat([app_user.wallets, df])
-                app_user.wallets.wallet_id = app_user.wallets.wallet_id.astype('int')
-                app_user.wallets.reset_index(inplace=True, drop=True)
+                wallet_id = len(app_user.wallets["wallet_id"])
+                data = {
+                    "wallet_id": len(app_user.wallets),
+                    "wallet_name": app_user.add_wallet_dict["wallet_name"],
+                    "wallet_amount": app_user.add_wallet_dict["wallet_amount"],
+                    "short_description": app_user.add_wallet_dict["wallet_description"],
+                    "wallet_created_date": str(datetime.datetime.now().date()),
+                    "transaction_count": 0
+                }
+                #add to wallets 
+                app_user.wallets["wallet_id"][str(wallet_id)] = wallet_id 
+                app_user.wallets["wallet_name"][str(wallet_id)] = data["wallet_name"]
+                app_user.wallets["wallet_amount"][str(wallet_id)] = float(data["wallet_amount"])
+                app_user.wallets["short_description"][str(wallet_id)] = data["short_description"]
+                app_user.wallets["wallet_created_date"][str(wallet_id)] = data["wallet_created_date"]
+                app_user.wallets["transaction_count"][str(wallet_id)] = data["transaction_count"]
+                
+                
                 self.prompt("Success", response["Success"])
             
             elif response["Success"] == "Wallet deleted":
-                app_user.wallets.drop(app_user.wallets.loc[app_user.wallets.wallet_name == app_user.delete_wallet_dict["wallet_name"]].index, inplace=True)
+                wallet_index = None
+                for i,v in app_user.wallets["wallet_name"].items():
+                    if v == app_user.delete_wallet_dict["wallet_name"]:
+                        wallet_index = i
+                        break
+                #delete wallet
+                for column in app_user.wallets:
+                    del app_user.wallets[column][wallet_index]
                 self.prompt("Success", response["Success"])
 
 
@@ -301,56 +326,63 @@ class Screen(Screen):
         for v in dict_calender.values():
             while len(v) != max_len:
                 v.append("")
-        #create a dataframe        
-        calender_df = pd.DataFrame(dict_calender)
+        #TODO Change dataframe logic to json/dictionary logic
+        calender_data = []
         #order weekdays
-        calender_df = calender_df[["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]]
+        calender_columns = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        size = len(dict_calender["Monday"])
+        index = 0
+        while index != size:
+            for column in calender_columns:
+                calender_data.append(dict_calender[column][index])
+            index += 1
+            
+
         #iterate over dataframe and add to gridlayout widget
-        for column in calender_df.columns:
+        for column in calender_columns:
             self.ids['gl_calender'].add_widget(Label(text=column))
-        for row in calender_df.values:
-            for cell in row:
-                #padding months and days
-                if len(str(cell)) == 1:
-                    new_cell = f"0{cell}"
+        for cell in calender_data:
+            #padding months and days
+            if len(str(cell)) == 1:
+                new_cell = f"0{cell}"
+            else:
+                new_cell = cell
+            if len(str(month)) == 1:
+                month = f"0{month}"
+            else:
+                month = month
+            
+            if f"{year}-{month}-{new_cell}" in list(app_user.schedule["scheduled_date"]) and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
+                if self.mini == True:
+                    bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
                 else:
-                    new_cell = cell
-                if len(str(month)) == 1:
-                    month = f"0{month}"
-                else:
-                    month = month
-                
-                if f"{year}-{month}-{new_cell}" in list(app_user.schedule["scheduled_date"]) and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
-                    if self.mini == True:
-                        bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
-                    else:
-                        bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
-                    bb.background_normal = ""
-                    bb.background_color=  (.4, .5, 100, .3)
-                    self.ids['gl_calender'].add_widget(bb)
-                    continue
+                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                bb.background_normal = ""
+                bb.background_color=  (.4, .5, 100, .3)
+                self.ids['gl_calender'].add_widget(bb)
+                continue
 
-                if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
-                    if self.mini == True:
-                        bb = BubbleButton(text=f"Today {cell}", on_press=self.select_day)
-                    else:
-                        bb = BubbleButton(text=f"Today {cell}", on_press=self.view_day)
-                    bb.background_normal = ""
-                    bb.background_color = (0, .5, 1, .5)
-                    self.ids['gl_calender'].add_widget(bb)                           
-
-                elif cell == "":
-                    self.ids['gl_calender'].add_widget(Label(text=""))
-                
+            if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
+                if self.mini == True:
+                    bb = BubbleButton(text=f"Today {cell}", on_press=self.select_day)
                 else:
-                    if self.mini == True:
-                        bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
-                    else:
-                        bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
-                    bb.halign = "center"
-                    bb.valign = "middle"
-                    bb.text_size = (20,20)
-                    self.ids['gl_calender'].add_widget(bb)
+                    bb = BubbleButton(text=f"Today {cell}", on_press=self.view_day)
+                bb.background_normal = ""
+                bb.background_color = (0, .5, 1, .5)
+                self.ids['gl_calender'].add_widget(bb)                           
+
+            elif cell == "":
+                self.ids['gl_calender'].add_widget(Label(text=""))
+            
+            else:
+                if self.mini == True:
+                    bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
+                else:
+                    bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
+                bb.halign = "center"
+                bb.valign = "middle"
+                bb.text_size = (20,20)
+                self.ids['gl_calender'].add_widget(bb)
         self.selected_month = int(month)
     
     def view_day(self, button):
@@ -464,19 +496,29 @@ class TransactionsScreen(Screen):
         gl = self.ids["gl"] 
         #clear the widgets on gl in case there are any currently existing
         gl.clear_widgets()
-        gl.size_hint_y = len(app_user.transactions) / 2.5
-        #iterate over the transactions dataframe and add values to the kivy Gridlayout object
-        for row in app_user.transactions:
-            for row in app_user.transactions[row]:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-                for cell in row[1:]:
-                    gl.add_widget(Label(text=str(cell)))
+        gl.size_hint_y = len(app_user.transactions["transaction_id"]) / 2.5
+        #iterate over json to create an object easier for building tables
+        rows = {}
+        for value in app_user.transactions["transaction_id"].values():
+            rows[str(value)] = [] 
+        
+        for column_name,column in app_user.transactions.items():
+            if column_name != "transaction_id":
+                for i,v in column.items():
+                    rows[i].append(v)
+        
+        for transaction_id in rows:
+            gl.add_widget(BubbleButton(text=str(transaction_id), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+            for value in rows[transaction_id]:
+                gl.add_widget(Label(text=str(value)))
+            
+                    
     
     def sort_transactions(self, button):
         #clear the current widgets on gl
         gl = self.ids["gl"] 
         gl.clear_widgets()
-        gl.size_hint_y = len(app.transactions) / 2.5
+        gl.size_hint_y = len(app_user.transactions["transaction_id"]) / 2.5
         if self.column_states[button.text] == "unsorted":
             for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
                 gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
@@ -503,14 +545,15 @@ class AddTransactionScreen(Screen):
             user_inputs = {i:v.text for i,v in self.ids.items() if i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown"}
             if self.check_user_inputs(user_inputs) == True:
                 #build packet
-                user_inputs["user_id"] = base64.b64encode(encryption(str(app_user.user_id), pubkey=f"{app_user.username}_pubkey", privkey=f"{app_user.username}_privkey")).decode()
-                user_inputs["user_password"] = app_user.password
                 packet = user_inputs.copy()
                 packet["update"] = "add transaction"
-                packet["user_name"] = app_user.username
-                #create transaction dictionary 
+                packet["username"] = app_user.username
+                packet["password"] = app_user.password
+                packet["userid"] = str(app_user.userid)
+                #create transaction dictionary
+                packet = build_packet(packet, app_user.username) 
                 app_user.add_new_transaction_dict = user_inputs
-                self.send_request(json.dumps(packet), "update")
+                self.send_request(packet, "update") 
         def mini_calender(self):
             sc = ScheduleScreen("MiniCalender")
             sc.mini = True
@@ -520,37 +563,40 @@ class AddTransactionScreen(Screen):
             bb = BubbleButton(text="Close", on_press=pu.dismiss)
             sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
             sc.ids["bl"].add_widget(bb)
-            print(self.manager.screens)
             pu.open()
                           
 class ViewTransactionScreen(Screen):
     def populate_screen(self, button_txt):
-        self.transaction_id = int(button_txt)
-        transaction_df = app_user.transactions.loc[app_user.transactions.transaction_id == self.transaction_id]
-        self.ids["transaction_id"].text = str(transaction_df.transaction_id.item())
-        self.ids["date"].text = str(transaction_df.transaction_date.item())
-        self.ids["amount"].text = str(transaction_df.amount.item())
-        self.ids["location"].text = str(transaction_df.location.item())
-        self.ids["type"].text = str(transaction_df.transaction_type.item())
-        self.ids["tag"].text = str(transaction_df.transaction_tag.item())
-        self.ids["wallet"].text = str(transaction_df.wallet_name.item())
+        self.transaction_id = button_txt
+        transaction_data = {}
+        for column in app_user.transactions:
+            for k,v in app_user.transactions[column].items():
+                if k == button_txt:
+                    transaction_data[column] = v
+        self.ids["transaction_id"].text = str(transaction_data["transaction_id"])
+        self.ids["date"].text = str(transaction_data["transaction_date"])
+        self.ids["amount"].text = str(transaction_data["amount"])
+        self.ids["location"].text = str(transaction_data["location"])
+        self.ids["type"].text = str(transaction_data["transaction_type"])
+        self.ids["tag"].text = str(transaction_data["transaction_tag"])
+        self.ids["wallet"].text = str(transaction_data["wallet_name"])
     def delete_transaction(self):
         data = {
             "transaction_id": self.ids["transaction_id"].text,
             "wallet_name": self.ids["wallet"].text,
             "amount": self.ids["amount"].text,
-            "user_id": str(app_user.user_id),
-            "user_password": str(app_user.password),
-            "transaction_type": self.ids["type"].text
+            "userid": str(app_user.userid),
+            "password": str(app_user.password),
+            "transaction_type": self.ids["type"].text,
+            "update": "delete transaction",
+            "username": app_user.username,
         }
         #create a copy of the data
         packet = data.copy()
         #send encrypted packet
-        packet = build_packet(packet, user=app_user.username)
-        packet["user_name"] = app_user.username
-        packet["update"] = "delete transaction"
         app_user.delete_transaction_dict = data
-        self.send_request(json.dumps(packet), "update")
+        packet = build_packet(packet, user=app_user.username)
+        self.send_request(packet, "update")
 
 class ScheduleScreen(Screen):
     pass
@@ -563,12 +609,19 @@ class DayScreen(Screen):
             day = f"0{day}"
         self.ids["date"].text = f"{year}-{month}-{day}"
         gl = self.ids["gl"]
-        day_data = app_user.schedule.loc[app_user.schedule.scheduled_date == f"{year}-{month}-{day}"]
+        day_data = {}
+        id_list = []
         gl.clear_widgets()
-        for row in day_data[["transaction_id", "frequency", "scheduled_date","transaction_type", "amount", "wallet_name"]].values:
-            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
-            for item in row[1:]:
-                gl.add_widget(Label(text=str(item)))
+        for value in zip(app_user.schedule["transaction_id"].values(), app_user.schedule["scheduled_date"].values()):
+            if str(value[1]) == f"{year}-{month}-{day}":
+                day_data[value[0]] = []
+        for transaction_id in day_data:
+            gl.add_widget(BubbleButton(text=transaction_id, background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
+        print(app_user.schedule)
+        # for row in day_data[["transaction_id", "frequency", "scheduled_date","transaction_type", "amount", "wallet_name"]].values:
+        #     gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
+        #     for item in row[1:]:
+        #         gl.add_widget(Label(text=str(item)))
     def add_transaction(self):
         self.manager.get_screen("AddTransactionScreen").previous_screen = self.name
         self.manager.get_screen("AddTransactionScreen").build_screen(date=self.ids["date"].text)
@@ -578,48 +631,61 @@ class WalletsScreen(Screen):
     def load_wallets(self):
         gl = self.ids["gl"]
         gl.clear_widgets()
-        gl.size_hint_y = len(app_user.wallets) / 2.5
-        for row in app_user.wallets[["wallet_id", "wallet_name", "wallet_amount", "short_description"]].values:
-            gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_wallet))
-            for item in row[1:]:
-                gl.add_widget(Label(text=str(item)))
+        gl.size_hint_y = len(app_user.wallets["wallet_name"]) / 2.5
+        rows = {}
+        for value in app_user.wallets["wallet_id"].values():
+            rows[str(value)] = []
+        
+        for column_name,column in app_user.wallets.items():
+            if column_name != "wallet_id" and column_name != "transaction_count" and column_name != "wallet_created_date":
+                for i,v in column.items():
+                    rows[i].append(v)
+
+        for wallet_id in rows:
+            gl.add_widget(BubbleButton(text=str(wallet_id), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_wallet))
+            for value in rows[wallet_id]:
+                gl.add_widget(Label(text=str(value)))
+    
     def find_wallet(self, button):
-        self.manager.get_screen("ViewWalletScreen").load_wallet(button)
+        self.manager.get_screen("ViewWalletScreen").load_wallet(button.text)
         self.screen_transition("ViewWalletScreen")
 
 class AddWalletScreen(Screen):
     def add_wallet(self):
         data = {i:v.text for i,v in self.ids.items() if i != 'gl'}
         if self.check_user_inputs(data, wallet_check=True) == True:
-            data["user_id"] = app_user.user_id
-            data["user_password"] = app_user.password
+            data["userid"] = str(app_user.userid)
+            data["password"] = str(app_user.password)
             packet = data.copy()
-            packet = encrypt_packet(packet, app_user.username)
             packet["update"] = "add wallet"
-            packet["user_name"] = app_user.username
-            app_user.add_wallet_dict = data 
-            self.send_request(json.dumps(packet), "update")    
+            packet["username"] = app_user.username
+            app_user.add_wallet_dict = data
+            packet = build_packet(packet, app_user.username)
+            self.send_request(packet, "update")    
 
 class ViewWalletScreen(Screen):
-    def load_wallet(self, button):
-        df = app_user.wallets.loc[app_user.wallets.wallet_id == int(button.text)]
-        self.ids["date_created"].text = str(df.wallet_created_date.item())
-        self.ids["wallet_name"].text = df.wallet_name.item()
-        self.ids["wallet_amount"].text = str(df.wallet_amount.item())
-        self.ids["wallet_description"].text = df.short_description.item()
-        self.ids["transaction_count"].text = str(df.transaction_count.item())
+    def load_wallet(self, button_txt):
+        wallet_data = {}
+        for column in app_user.wallets:
+            for k,v in app_user.wallets[column].items():
+                if k == button_txt:
+                    wallet_data[column] = v
+        self.ids["date_created"].text = str(wallet_data["wallet_created_date"])
+        self.ids["wallet_name"].text = str(wallet_data["wallet_name"])
+        self.ids["wallet_amount"].text = str(wallet_data["wallet_amount"])
+        self.ids["wallet_description"].text = str(wallet_data["short_description"])
+        self.ids["transaction_count"].text = str(wallet_data["transaction_count"])
     
     def delete_wallet(self):
-        data = {i:v.text for i,v in self.ids.items()}
-        app_user.delete_wallet_dict 
-        data["user_id"] = app_user.user_id
-        data["user_password"] = app_user.password
+        data = {i:v.text for i,v in self.ids.items()} 
+        data["userid"] = str(app_user.userid)
+        data["password"] = app_user.password
         packet = data.copy()
-        packet = encrypt_packet(packet, app_user.username)
         packet["update"] = "delete wallet"
-        packet["user_name"] = app_user.username
-        app_user.delete_wallet_dict  = data 
-        self.send_request(json.dumps(packet), "update")
+        packet["username"] = app_user.username
+        app_user.delete_wallet_dict = data 
+        packet = build_packet(packet, app_user.username)
+        self.send_request(packet, "update")
 
 class AnalysisScreen(Screen):
     def send_email(self):

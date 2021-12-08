@@ -3,7 +3,7 @@ import json
 import base64
 
 #endpoint for API
-end_point_address="34.94.45.224:80"
+end_point_address="34.94.45.224:443"
 
 #rsa encryption method
 def encryption(data, encrypt=True, pubkey="pubkey", privkey="privkey"):
