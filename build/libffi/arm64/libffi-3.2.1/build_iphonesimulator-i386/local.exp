@@ -1,0 +1,2 @@
+set CC_FOR_TARGET "xcrun -sdk iphonesimulator clang -arch i386"
+set CXX_FOR_TARGET "g++"

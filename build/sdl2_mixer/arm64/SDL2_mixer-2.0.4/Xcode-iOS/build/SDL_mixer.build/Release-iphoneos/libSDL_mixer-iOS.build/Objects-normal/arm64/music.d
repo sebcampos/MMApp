@@ -1,0 +1,35 @@
+dependencies: \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music.c \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_hints.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_stdinc.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_config.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_platform.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/begin_code.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/close_code.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_config_iphoneos.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_log.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_timer.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_error.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/SDL_mixer.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_rwops.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_audio.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_endian.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_mutex.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_thread.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_atomic.h \
+  /Users/sebastian/projects/apps/dist/include/common/sdl2/SDL_version.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/mixer.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_cmd.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_wav.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_mikmod.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_modplug.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_nativemidi.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_fluidsynth.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_timidity.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_ogg.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_opus.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_mpg123.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_mad.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/music_flac.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/native_midi/native_midi.h

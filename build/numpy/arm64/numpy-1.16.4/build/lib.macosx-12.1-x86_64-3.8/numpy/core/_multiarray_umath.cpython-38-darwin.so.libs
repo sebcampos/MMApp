@@ -1,0 +1,1 @@
+-L/Users/sebastian/projects/apps/dist/lib -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS15.2.sdk/usr/lib -Lbuild/temp.macosx-12.1-x86_64-3.8 -lnpymath -lnpysort

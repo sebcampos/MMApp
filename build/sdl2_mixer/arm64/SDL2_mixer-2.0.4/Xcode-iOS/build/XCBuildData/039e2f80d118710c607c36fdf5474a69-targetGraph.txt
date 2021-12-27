@@ -1,0 +1,2 @@
+Target dependency graph (1 target)
+libSDL_mixer-iOS in SDL_mixer, no dependencies

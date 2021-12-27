@@ -1,0 +1,8 @@
+__pycache__
+MM_sqlite.db
+credentials.py
+UserID
+pubkey
+privkey
+*_privkey
+*_pubkey

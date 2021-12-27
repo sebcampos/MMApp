@@ -1,0 +1,47 @@
+{
+  "_buildCommand2" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildAndRun"
+  },
+  "buildCommand" : "build",
+  "configuredTargets" : [
+    {
+      "guid" : "d16f3f33f0d4fce04bb028a7718b962ba5f818e14a335abc39eeaed3c7a818e1"
+    }
+  ],
+  "containerPath" : "/Users/sebastian/projects/apps/build/sdl2_mixer/x86_64/SDL2_mixer-2.0.4/Xcode-iOS/SDL_mixer.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "configurationName" : "Release",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+          "ARCHS" : "x86_64",
+          "HEADER_SEARCH_PATHS" : "$HEADER_SEARCH_PATHS /usr/include/machine /Users/sebastian/projects/apps/dist/include/x86_64/freetype /Users/sebastian/projects/apps/dist/include/x86_64/freetype /Users/sebastian/projects/apps/dist/include/x86_64/hostlibffi /Users/sebastian/projects/apps/dist/include/x86_64/ffi /Users/sebastian/projects/apps/dist/include/x86_64/openssl /Users/sebastian/projects/apps/dist/include/common/sdl2 /Users/sebastian/projects/apps/dist/include/common/sdl2_image /Users/sebastian/projects/apps/dist/include/common/sdl2_mixer /Users/sebastian/projects/apps/dist/include/common/sdl2_ttf /Users/sebastian/projects/apps/dist/include/common/numpy ",
+          "IDEBuildOperationMaxNumberOfConcurrentCompileTasks" : "8",
+          "ONLY_ACTIVE_ARCH" : "NO",
+          "SDKROOT" : "iphonesimulator15.2"
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "COLOR_DIAGNOSTICS" : "YES",
+          "diagnostic_message_length" : "80",
+          "ENABLE_PREVIEWS" : "NO"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "shouldCollectMetrics" : false,
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : false,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : false
+}

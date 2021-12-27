@@ -1,0 +1,2 @@
+Target dependency graph (1 target)
+libSDL_image-iOS in SDL_image, no dependencies

@@ -1,0 +1,32 @@
+dependencies: \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/stream_encoder.c \
+  /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS15.2.sdk/usr/include/machine/limits.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/share/compat.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/assert.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/stream_decoder.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/export.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/format.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/ordinals.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/protected/stream_encoder.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/FLAC/stream_encoder.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/ogg_encoder_aspect.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/libogg-1.3.2/include/ogg/ogg.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/libogg-1.3.2/include/ogg/os_types.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/float.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/bitwriter.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/bitmath.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/crc.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/cpu.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/fixed.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/format.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/lpc.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/md5.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/memory.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/macros.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/ogg_helper.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/ogg_mapping.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/stream_encoder.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/stream_encoder_framing.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/src/libFLAC/include/private/window.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/share/alloc.h \
+  /Users/sebastian/projects/apps/build/sdl2_mixer/arm64/SDL2_mixer-2.0.4/external/flac-1.3.2/include/share/private.h

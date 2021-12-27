@@ -1,0 +1,33 @@
+dependencies: \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/SDL_systhread.c \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../../SDL_internal.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../../dynapi/SDL_dynapi.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_config.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_platform.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/begin_code.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/close_code.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_config_iphoneos.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_system.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_stdinc.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_keyboard.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_error.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_keycode.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_scancode.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_video.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_pixels.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_endian.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_rect.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_rwops.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_surface.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_blendmode.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_render.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_log.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_thread.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_atomic.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_mutex.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../SDL_thread_c.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../pthread/SDL_systhread_c.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../../SDL_error_c.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../.././SDL_internal.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/src/thread/pthread/../SDL_systhread.h \
+  /Users/sebastian/projects/apps/build/sdl2/x86_64/SDL-ef3ca2cc46afc317cca0a484eb3187b810db9f69/include/SDL_assert.h

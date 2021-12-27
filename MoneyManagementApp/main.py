@@ -8,6 +8,7 @@ import base64
 
 import kivy
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.progressbar import ProgressBar
 from kivy.network.urlrequest import UrlRequest 
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -17,9 +18,25 @@ from kivy.lang import Builder
 from kivy.app import App
 
 
+#TODO fix filtering, add a way to email data
+#TODO fix font label text sizes: all columns,the days of the weeks,, Today label for calender
+
+
+global DataPath
+DataPath = ""
+
 kivy.require('2.0.0')
 
 Builder.load_file("main.kv")
+
+class Label(Label):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = str(self.width / 10.5)+"sp"
+        self.halign = 'center'
+        self.valign = 'middle'
+        
+
 
 class User():
     def __init__(self, user_id, phone_number, email, username, password):
@@ -32,7 +49,7 @@ class User():
         self.delete_transaction_dict = None
         self.add_wallet_dict = None
         self.delete_wallet_dict = None
-        self.conn = sqlite3.connect("user.db")
+        self.conn = sqlite3.connect(f"{DataPath}/user.db")
         self.cur = self.conn.cursor()
         self.cur.execute("""
             CREATE TABLE if not exists user_table(
@@ -53,12 +70,12 @@ class User():
             "Annually": 360
         }
     def __repr__(self):
-        return f"username: {self.username}\nid: {self.user_id}\nemail: {self.email}\nphonenumber {self.phone_number}"
+        return f"username: {self.username}\nid: {self.user_id}\nemail: {self.email}\nphonenumber {self.phonenumber}"
 
     def write_self(self):
         self.cur.execute(f"""
             INSERT INTO user_table (userid, useremail, username, phonenumber, password)
-            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phone_number}', '{self.password}')
+            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phonenumber}', '{self.password}')
             """)
         self.conn.commit()
              
@@ -94,11 +111,13 @@ class Screen(Screen):
             "12": "Dec"
         }
         self.ordered_weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        self.pu = None
+        self.pb = None
        
     def __repr__(self):
         return f"previous Screen: {self.previous_screen}\nnext Screen: {self.next_screen}\nScreen Name:{self.name}\nsend_request commands:\n\t'register user'\n\t'login'\n\t'update'"
     
-    def screen_transition(self, screen, direction='left', duration=1):
+    def screen_transition(self, screen, direction='left', duration=.2):
         self.manager.transition.direction = direction
         self.manager.transition.duration = duration
         self.manager.current = screen
@@ -139,9 +158,9 @@ class Screen(Screen):
                 global app_user
                 app_user.user_id = response["id"]
                 #save keys
-                with open(f"{app_user.username}_privkey", "w") as f:
+                with open(f"{DataPath}/{app_user.username}_privkey", "w") as f:
                     f.write(response['privkey'])
-                with open(f"{app_user.username}_pubkey", "w") as f:
+                with open(f"{DataPath}/{app_user.username}_pubkey", "w") as f:
                     f.write(response['pubkey'])
                 for w in self.ids.values():
                     w.text = ""
@@ -182,12 +201,13 @@ class Screen(Screen):
                     elif app_user.add_new_transaction_dict["transaction_type"] == "Deposit":
                         ##subtract from wallet
                         app_user.wallets["wallet_amount"][wallet_index] += float(app_user.add_new_transaction_dict["amount"])
-                if app_user.add_new_transaction_dict["frequency"] != "Daily" and app_user.add_new_transaction_dict["calender"] != str(datetime.datetime.today().date()):
+                if app_user.add_new_transaction_dict["frequency"] != "Daily":
                     #schedule the transaction
                     app_user.schedule["transaction_id"][str(transaction_id)] = str(transaction_id)
                     app_user.schedule["frequency"][str(transaction_id)] = app_user.freq_map[app_user.add_new_transaction_dict['frequency']]
                     app_user.schedule["scheduled_date"][str(transaction_id)] = app_user.add_new_transaction_dict["calender"]
-                    app_user.schedule["next_day"][str(transaction_id)] = datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d") + datetime.timedelta(days=app_user.freq_map[app_user.add_new_transaction_dict['frequency']])
+                    if app_user.add_new_transaction_dict["frequency"] != "Once":
+                        app_user.schedule["next_day"][str(transaction_id)] = str(datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d") + datetime.timedelta(days=app_user.freq_map[app_user.add_new_transaction_dict['frequency']])).split(" ")[0].strip()
                     app_user.schedule["amount"][str(transaction_id)] = app_user.add_new_transaction_dict["amount"]
                     app_user.schedule["transaction_type"][str(transaction_id)] = app_user.add_new_transaction_dict["transaction_type"]
                     app_user.schedule["wallet_name"][str(transaction_id)] = app_user.add_new_transaction_dict["wallet"]
@@ -226,8 +246,7 @@ class Screen(Screen):
                     for column in app_user.schedule:
                         del app_user.schedule[column][str(app_user.delete_transaction_dict["transaction_id"])]
 
-                #app_user.delete_transaction_dict["transaction_id"] in app_user.schedule.transaction_id.tolist():
-                    #app_user.schedule.drop(app_user.schedule.loc[app_user.schedule.transaction_id == int(app_user.delete_transaction_dict["transaction_id"])].index, inplace=True)
+
                 #clear screen
                 for widget in self.ids.values():
                     widget.text = ""
@@ -275,7 +294,8 @@ class Screen(Screen):
         
     def prompt(self, error_type, error_message):
         cb = BubbleButton(text=f"{error_message}\n\n\n\n   Close")
-        pu = Popup(title=f"{error_type}", content=cb, size_hint=(.5, .5))
+        cb.font_size = "10sp"
+        pu = Popup(title=f"{error_type}", content=cb, size_hint=(1, .5))
         cb.bind(on_press=pu.dismiss)
         pu.open()
     
@@ -326,7 +346,6 @@ class Screen(Screen):
         for v in dict_calender.values():
             while len(v) != max_len:
                 v.append("")
-        #TODO Change dataframe logic to json/dictionary logic
         calender_data = []
         #order weekdays
         calender_columns = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -336,11 +355,15 @@ class Screen(Screen):
             for column in calender_columns:
                 calender_data.append(dict_calender[column][index])
             index += 1
-            
+        
+        if self.mini:
+            calender_columns = ["S", "M", "T", "W", "T", "F", "S"]
 
         #iterate over dataframe and add to gridlayout widget
         for column in calender_columns:
             self.ids['gl_calender'].add_widget(Label(text=column))
+        
+        
         for cell in calender_data:
             #padding months and days
             if len(str(cell)) == 1:
@@ -352,7 +375,7 @@ class Screen(Screen):
             else:
                 month = month
             
-            if f"{year}-{month}-{new_cell}" in list(app_user.schedule["scheduled_date"]) and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
+            if f"{year}-{month}-{new_cell}" in list(app_user.schedule["scheduled_date"].values()) or f"{year}-{month}-{new_cell}" in list(app_user.schedule["next_day"].values()) and f"{year}-{month}-{new_cell}" != str(datetime.datetime.now().date()):
                 if self.mini == True:
                     bb = BubbleButton(text=f"{cell}", on_press=self.select_day)
                 else:
@@ -365,8 +388,10 @@ class Screen(Screen):
             if f"{year}-{month}-{new_cell}" == str(datetime.datetime.now().date()):
                 if self.mini == True:
                     bb = BubbleButton(text=f"Today {cell}", on_press=self.select_day)
+                    bb.font_size = "6sp"
                 else:
                     bb = BubbleButton(text=f"Today {cell}", on_press=self.view_day)
+                    bb.font_size= "11.5sp"
                 bb.background_normal = ""
                 bb.background_color = (0, .5, 1, .5)
                 self.ids['gl_calender'].add_widget(bb)                           
@@ -381,7 +406,6 @@ class Screen(Screen):
                     bb = BubbleButton(text=f"{cell}", on_press=self.view_day)
                 bb.halign = "center"
                 bb.valign = "middle"
-                bb.text_size = (20,20)
                 self.ids['gl_calender'].add_widget(bb)
         self.selected_month = int(month)
     
@@ -402,6 +426,8 @@ class Screen(Screen):
             day = f"0{button.text}"
         else:
             day = str(button.text)
+        if "Today " in day:
+            day = day.replace("Today ", "")
         self.manager.get_screen("AddTransactionScreen").ids["calender"].text = f"{self.ids['year_label'].text}-{month}-{day}"
         for b in self.ids["gl_calender"].children:
             b.background_normal = ""
@@ -412,7 +438,7 @@ class Screen(Screen):
 
     def change_month(self, button):
         current_month = int([i for i,v in self.calender.items() if v == self.ids["current_month"].text][0])
-        if button.text == "<":
+        if button.text == "<<<":
             #logic to decrement month based on january
             if current_month == 1:
                 current_month = 12
@@ -422,7 +448,7 @@ class Screen(Screen):
                 current_month -= 1
                 self.ids["current_month"].text = self.calender[str(current_month)]
         #logic to increment month
-        elif button.text == ">":
+        elif button.text == ">>>":
             #logic to increment based on december
             if current_month == 12:
                 current_month = 1
@@ -453,8 +479,19 @@ class Screen(Screen):
         return days_in_month
 
     def animation(self, req, start, end):
-        print(start, end)
-        pass
+        if self.pb == None or self.pu == None:
+            self.pb = ProgressBar(value=start, max=end)
+            self.pu = Popup(title="Loading...", content=self.pb, size_hint=(.5, .5))
+            self.pu.open()
+        
+        if self.pb != None and self.pu != None:
+            self.pb.value = start
+        
+        if start == end:
+            self.pu.dismiss()
+            self.pb = None
+            self.pu = None
+        
         
 class RegistrationScreen(Screen):
     def register(self):
@@ -475,13 +512,16 @@ class LoginScreen(Screen):
         packet = user_inputs.copy()
         if self.check_user_inputs(user_inputs) == True:
             global app_user
-            conn = sqlite3.connect("user.db")
+            conn = sqlite3.connect(f"{DataPath}/user.db")
             cur = conn.cursor()
             row = cur.execute("SELECT * FROM user_table").fetchall()[0]
             app_user = User(row[0], row[3], row[1], row[2], row[4])
             packet["userid"] = str(app_user.userid)
-            packet = build_packet(packet, app_user.username) 
+            packet = build_packet(packet, f"{DataPath}/{app_user.username}") 
             self.send_request(packet, "login")
+    
+    def reset_password(self):
+        self.prompt("Message","This feature is not available yet,\nplease email secampos95@gmail.com")
 
 class MenuScreen(Screen):
     def log_out(self):
@@ -498,39 +538,68 @@ class TransactionsScreen(Screen):
         gl.clear_widgets()
         gl.size_hint_y = len(app_user.transactions["transaction_id"]) / 2.5
         #iterate over json to create an object easier for building tables
-        rows = {}
+        self.rows = {}
         for value in app_user.transactions["transaction_id"].values():
-            rows[str(value)] = [] 
+            self.rows[str(value)] = [] 
         
         for column_name,column in app_user.transactions.items():
             if column_name != "transaction_id":
                 for i,v in column.items():
-                    rows[i].append(v)
+                    self.rows[i].append(v)
         
-        for transaction_id in rows:
+        for transaction_id in self.rows:
             gl.add_widget(BubbleButton(text=str(transaction_id), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-            for value in rows[transaction_id]:
-                gl.add_widget(Label(text=str(value)))
+            date=True
+            for value in self.rows[transaction_id]:
+                l = Label(text=str(value))
+                l.text_size = l.width, None
+                l.font_size = "7sp"
+                if date != True:
+                    # l.text_size = l.width, None
+                    l.font_size = "9sp"
+                    l.shorten = True
+                date=False
+                gl.add_widget(l)
             
                     
     
-    def sort_transactions(self, button):
+    def sort_table(self, button):
         #clear the current widgets on gl
         gl = self.ids["gl"] 
         gl.clear_widgets()
         gl.size_hint_y = len(app_user.transactions["transaction_id"]) / 2.5
         if self.column_states[button.text] == "unsorted":
-            for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=True).values:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-                for cell in row[1:]:
-                    gl.add_widget(Label(text=str(cell)))
+            sorted_table = sorted(app_user.transactions[self.translate_columns[button.text]].items(), key=lambda x: x[1])
+            for index, v in sorted_table:
+                gl.add_widget(BubbleButton(text=str(index), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+                date = True
+                for value in self.rows[index]:
+                    l = Label(text=str(value))
+                    l.text_size = l.width, None
+                    l.font_size = "7sp"
+                    if date != True:
+                        # l.text_size = l.width, None
+                        l.font_size = "9sp"
+                        l.shorten = True
+                    date=False
+                    gl.add_widget(l)
             self.column_states[button.text] = "sorted"
             return
         elif self.column_states[button.text] == "sorted":
-            for row in self.transactions.sort_values(self.translate_columns[button.text], ascending=False).values:
-                gl.add_widget(BubbleButton(text=str(row[0]), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
-                for cell in row[1:]:
-                    gl.add_widget(Label(text=str(cell)))
+            sorted_table = sorted(app_user.transactions[self.translate_columns[button.text]].items(), key=lambda x: x[1], reverse=True)
+            for index, v in sorted_table:
+                gl.add_widget(BubbleButton(text=str(index), on_press=self.load_transaction, background_normal="", background_color=(.4, .5, 100, .3)))
+                date = True
+                for value in self.rows[index]:
+                    l = Label(text=str(value))
+                    l.text_size = l.width, None
+                    l.font_size = "7sp"
+                    if date != True:
+                        # l.text_size = l.width, None
+                        l.font_size = "9sp"
+                        l.shorten = True
+                    date=False
+                    gl.add_widget(l)
             self.column_states[button.text] = "unsorted"
             return
 
@@ -551,7 +620,7 @@ class AddTransactionScreen(Screen):
                 packet["password"] = app_user.password
                 packet["userid"] = str(app_user.userid)
                 #create transaction dictionary
-                packet = build_packet(packet, app_user.username) 
+                packet = build_packet(packet, f"{DataPath}/{app_user.username}") 
                 app_user.add_new_transaction_dict = user_inputs
                 self.send_request(packet, "update") 
         def mini_calender(self):
@@ -559,7 +628,7 @@ class AddTransactionScreen(Screen):
             sc.mini = True
             sc.build_calender()
             self.manager.add_widget(sc)
-            pu = Popup(title="Calender", content=sc, size_hint=(.7, .7))
+            pu = Popup(title="Calender", content=sc, size_hint=(1, .7))
             bb = BubbleButton(text="Close", on_press=pu.dismiss)
             sc.ids["bl"].remove_widget(sc.ids["dynamic_button"])
             sc.ids["bl"].add_widget(bb)
@@ -589,14 +658,16 @@ class ViewTransactionScreen(Screen):
             "password": str(app_user.password),
             "transaction_type": self.ids["type"].text,
             "update": "delete transaction",
+            "date": self.ids["date"],
             "username": app_user.username,
         }
         #create a copy of the data
         packet = data.copy()
         #send encrypted packet
         app_user.delete_transaction_dict = data
-        packet = build_packet(packet, user=app_user.username)
+        packet = build_packet(packet, user=f"{DataPath}/{app_user.username}")
         self.send_request(packet, "update")
+
 
 class ScheduleScreen(Screen):
     pass
@@ -610,18 +681,23 @@ class DayScreen(Screen):
         self.ids["date"].text = f"{year}-{month}-{day}"
         gl = self.ids["gl"]
         day_data = {}
-        id_list = []
         gl.clear_widgets()
-        for value in zip(app_user.schedule["transaction_id"].values(), app_user.schedule["scheduled_date"].values()):
-            if str(value[1]) == f"{year}-{month}-{day}":
-                day_data[value[0]] = []
+        for value in zip(app_user.schedule["transaction_id"].keys(), app_user.schedule["transaction_id"].values(), app_user.schedule["scheduled_date"].values(), app_user.schedule["next_day"].values()):
+            if str(value[2]) == f"{year}-{month}-{day}" or str(value[-1]) == f"{year}-{month}-{day}":
+                day_data[value[1]] = [value[0]]
+
+        
+        for i,v in day_data.items():
+            for index,row in app_user.schedule.items():
+                if index != "next_day":
+                    day_data[i].append(row[v[0]])
+
+
         for transaction_id in day_data:
-            gl.add_widget(BubbleButton(text=transaction_id, background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
-        print(app_user.schedule)
-        # for row in day_data[["transaction_id", "frequency", "scheduled_date","transaction_type", "amount", "wallet_name"]].values:
-        #     gl.add_widget(BubbleButton(text=str(row[0]), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
-        #     for item in row[1:]:
-        #         gl.add_widget(Label(text=str(item)))
+            gl.add_widget(BubbleButton(text=str(transaction_id), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
+            for value in day_data[transaction_id][2:]:
+                gl.add_widget(Label(text=str(value)))
+
     def add_transaction(self):
         self.manager.get_screen("AddTransactionScreen").previous_screen = self.name
         self.manager.get_screen("AddTransactionScreen").build_screen(date=self.ids["date"].text)
@@ -643,8 +719,14 @@ class WalletsScreen(Screen):
 
         for wallet_id in rows:
             gl.add_widget(BubbleButton(text=str(wallet_id), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.find_wallet))
+            counter = 0
             for value in rows[wallet_id]:
+                l = Label(text=str(value))
+                counter+=1
+                if counter == 3:
+                    l.shorten = True
                 gl.add_widget(Label(text=str(value)))
+
     
     def find_wallet(self, button):
         self.manager.get_screen("ViewWalletScreen").load_wallet(button.text)
@@ -660,7 +742,7 @@ class AddWalletScreen(Screen):
             packet["update"] = "add wallet"
             packet["username"] = app_user.username
             app_user.add_wallet_dict = data
-            packet = build_packet(packet, app_user.username)
+            packet = build_packet(packet, f"{DataPath}/{app_user.username}")
             self.send_request(packet, "update")    
 
 class ViewWalletScreen(Screen):
@@ -684,17 +766,16 @@ class ViewWalletScreen(Screen):
         packet["update"] = "delete wallet"
         packet["username"] = app_user.username
         app_user.delete_wallet_dict = data 
-        packet = build_packet(packet, app_user.username)
+        packet = build_packet(packet, f"{DataPath}/{app_user.username}")
         self.send_request(packet, "update")
 
 class AnalysisScreen(Screen):
     def send_email(self):
+        self.prompt("Message","This feature is not available yet,\nplease email secampos95@gmail.com")
         print("sending an email!")
 
 class MMApp(App):
-    def build(self):
-        conn = sqlite3.connect("user.db")
-        cur = conn.cursor()       
+    def build(self):   
         self.sm = ScreenManager()
         self.sm.add_widget(RegistrationScreen(name="RegistrationScreen"))
         self.sm.add_widget(LoginScreen(name="LoginScreen"))
@@ -707,7 +788,10 @@ class MMApp(App):
         self.sm.add_widget(WalletsScreen(name="WalletsScreen"))
         self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
         self.sm.add_widget(ViewWalletScreen(name="ViewWalletScreen"))
+        self.sm.add_widget(AnalysisScreen(name="AnalysisScreen"))
         self.sm.current =  "LoginScreen"
+        global DataPath 
+        DataPath = self.get_running_app().user_data_dir
         return self.sm
 
 if __name__ ==  "__main__":

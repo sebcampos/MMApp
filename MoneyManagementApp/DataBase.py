@@ -32,8 +32,7 @@ class DB():
                 next_day date,
                 amount int,
                 transaction_type text,
-                wallet_name text,
-                added_today text
+                wallet_name text
             )""")
         self.cur.execute("""
             CREATE TABLE if not exists wallets(
