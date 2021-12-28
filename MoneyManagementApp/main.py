@@ -70,12 +70,12 @@ class User():
             "Annually": 360
         }
     def __repr__(self):
-        return f"username: {self.username}\nid: {self.user_id}\nemail: {self.email}\nphonenumber {self.phonenumber}"
+        return f"username: {self.username}\nid: {self.userid}\nemail: {self.email}\nphonenumber {self.phonenumber}"
 
     def write_self(self):
         self.cur.execute(f"""
             INSERT INTO user_table (userid, useremail, username, phonenumber, password)
-            VALUES({self.user_id},'{self.email}','{self.username}', '{self.phonenumber}', '{self.password}')
+            VALUES({self.userid},'{self.email}','{self.username}', '{self.phonenumber}', '{self.password}')
             """)
         self.conn.commit()
              
@@ -146,6 +146,8 @@ class Screen(Screen):
             verify=False
         )
 
+        
+
     def failed_request(self, req, response):
         print("failed")
         self.prompt(f"{self.name}Error",response)
@@ -156,7 +158,7 @@ class Screen(Screen):
             if response["Success"] == 'registration complete':
                 #register user
                 global app_user
-                app_user.user_id = response["id"]
+                app_user.userid = response["id"]
                 #save keys
                 with open(f"{DataPath}/{app_user.username}_privkey", "w") as f:
                     f.write(response['privkey'])
@@ -191,10 +193,10 @@ class Screen(Screen):
                 app_user.transactions["wallet_name"][str(transaction_id)] = app_user.add_new_transaction_dict["wallet"]
                 app_user.transactions["transaction_type"][str(transaction_id)] = app_user.add_new_transaction_dict["transaction_type"]
                 app_user.transactions["transaction_tag"][str(transaction_id)] = app_user.add_new_transaction_dict["tag"]
-                #add to wallet transaction counter
-                app_user.wallets["transaction_count"][wallet_index] += 1
-                if app_user.add_new_transaction_dict["calender"] == str(datetime.datetime.today().date()):
+                if datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d").date() <= datetime.datetime.today().date():
                     #check if transaction is scheduled for today
+                    #add to wallet transaction counter
+                    app_user.wallets["transaction_count"][wallet_index] += 1
                     if app_user.add_new_transaction_dict["transaction_type"] == "Withdrawl":
                         ##add from wallet
                         app_user.wallets["wallet_amount"][wallet_index] -= float(app_user.add_new_transaction_dict["amount"])
@@ -208,6 +210,8 @@ class Screen(Screen):
                     app_user.schedule["scheduled_date"][str(transaction_id)] = app_user.add_new_transaction_dict["calender"]
                     if app_user.add_new_transaction_dict["frequency"] != "Once":
                         app_user.schedule["next_day"][str(transaction_id)] = str(datetime.datetime.strptime(app_user.add_new_transaction_dict["calender"], "%Y-%m-%d") + datetime.timedelta(days=app_user.freq_map[app_user.add_new_transaction_dict['frequency']])).split(" ")[0].strip()
+                    else:
+                        app_user.schedule["next_day"][str(transaction_id)] = "None"
                     app_user.schedule["amount"][str(transaction_id)] = app_user.add_new_transaction_dict["amount"]
                     app_user.schedule["transaction_type"][str(transaction_id)] = app_user.add_new_transaction_dict["transaction_type"]
                     app_user.schedule["wallet_name"][str(transaction_id)] = app_user.add_new_transaction_dict["wallet"]
@@ -232,19 +236,24 @@ class Screen(Screen):
                     for key in list(app_user.transactions[column].keys()):
                         if int(key) > int(app_user.delete_transaction_dict["transaction_id"]):
                             app_user.transactions[column][str(int(key) - 1)] = app_user.transactions[column].pop(key)
+                
                 #decrement transaction count
-                app_user.wallets["transaction_count"][wallet_index] -= 1
-                #return reverse transaction from wallet
-                if app_user.delete_transaction_dict["transaction_type"] == "Withdrawl":
-                    #if withdrawl deleted return the amount to the wallet
-                    app_user.wallets["wallet_amount"][wallet_index] += float(app_user.delete_transaction_dict["amount"])
-                elif app_user.delete_transaction_dict["transaction_type"] == "Deposit":
-                    #if deposit deleted subtract amount from wallet
-                    app_user.wallets["wallet_amount"][wallet_index] -= float(app_user.delete_transaction_dict["amount"])
+                print(app_user.delete_transaction_dict["date"])
+                print(type(app_user.delete_transaction_dict["date"])) 
+                ## if date is before or euqal to transaction date ##
+                if datetime.datetime.strptime(app_user.delete_transaction_dict["date"], "%Y-%m-%d").date() <= datetime.datetime.now().date():
+                    app_user.wallets["transaction_count"][wallet_index] -= 1
+                    #return reverse transaction from wallet
+                    if app_user.delete_transaction_dict["transaction_type"] == "Withdrawl":
+                        #if withdrawl deleted return the amount to the wallet
+                        app_user.wallets["wallet_amount"][wallet_index] += float(app_user.delete_transaction_dict["amount"])
+                    elif app_user.delete_transaction_dict["transaction_type"] == "Deposit":
+                        #if deposit deleted subtract amount from wallet
+                        app_user.wallets["wallet_amount"][wallet_index] -= float(app_user.delete_transaction_dict["amount"])
                 #delete transaction from the schedule
                 if app_user.delete_transaction_dict["transaction_id"] in app_user.schedule["transaction_id"].keys():
                     for column in app_user.schedule:
-                        del app_user.schedule[column][str(app_user.delete_transaction_dict["transaction_id"])]
+                        del app_user.schedule[column][app_user.delete_transaction_dict["transaction_id"]]
 
 
                 #clear screen
@@ -299,7 +308,7 @@ class Screen(Screen):
         cb.bind(on_press=pu.dismiss)
         pu.open()
     
-    def check_user_inputs(self, inputs, registration=False, wallet_check=False):
+    def check_user_inputs(self, inputs, registration=False, wallet_check=False, add_transaction=False):
         if registration == True:
             if len(inputs["password"]) < 8:
                 self.prompt("InputError", "Password Must be at least 8 characters long")
@@ -320,7 +329,17 @@ class Screen(Screen):
             except:
                 self.prompt("InputError", "wallet amount must be and integer or decimal")
                 return False
-        
+        if add_transaction == True:
+            if inputs["calender"] == 'calender':
+                self.prompt("InputError", "Please add a date for transaction")
+                return
+            try:
+                float(inputs["amount"])
+            except:
+                self.prompt("InputError", "Please enter decimal or integer in Amount field")
+
+
+
         return True
     
     def build_calender(self, year=datetime.datetime.now().year, month=datetime.datetime.now().month):
@@ -479,20 +498,22 @@ class Screen(Screen):
         return days_in_month
 
     def animation(self, req, start, end):
+        print(start, end)
         if self.pb == None or self.pu == None:
             self.pb = ProgressBar(value=start, max=end)
             self.pu = Popup(title="Loading...", content=self.pb, size_hint=(.5, .5))
             self.pu.open()
-        
-        if self.pb != None and self.pu != None:
-            self.pb.value = start
+            return
         
         if start == end:
             self.pu.dismiss()
             self.pb = None
             self.pu = None
+            return
+
+        self.pb.value = start
         
-        
+               
 class RegistrationScreen(Screen):
     def register(self):
         user_inputs = {i:v.text for i,v in self.ids.items()}
@@ -514,8 +535,14 @@ class LoginScreen(Screen):
             global app_user
             conn = sqlite3.connect(f"{DataPath}/user.db")
             cur = conn.cursor()
-            row = cur.execute("SELECT * FROM user_table").fetchall()[0]
+            try:
+                row = cur.execute("SELECT * FROM user_table").fetchall()[0]
+            except sqlite3.OperationalError:
+                self.prompt("LoginError", "No user registered for this app\nOnly one User per app")
+                return
+
             app_user = User(row[0], row[3], row[1], row[2], row[4])
+            print(app_user)
             packet["userid"] = str(app_user.userid)
             packet = build_packet(packet, f"{DataPath}/{app_user.username}") 
             self.send_request(packet, "login")
@@ -612,7 +639,7 @@ class AddTransactionScreen(Screen):
                 wd.add_widget(Button(text=f"{i}", size_hint_y=None, on_press= lambda x: wd.select(x.text)))
         def add_transaction(self):
             user_inputs = {i:v.text for i,v in self.ids.items() if i != "dropdown" and i != "wallet_dropdown" and i != "frequency_dropdown"}
-            if self.check_user_inputs(user_inputs) == True:
+            if self.check_user_inputs(user_inputs, add_transaction=True) == True:
                 #build packet
                 packet = user_inputs.copy()
                 packet["update"] = "add transaction"
@@ -658,7 +685,7 @@ class ViewTransactionScreen(Screen):
             "password": str(app_user.password),
             "transaction_type": self.ids["type"].text,
             "update": "delete transaction",
-            "date": self.ids["date"],
+            "date": self.ids["date"].text,
             "username": app_user.username,
         }
         #create a copy of the data
@@ -667,7 +694,6 @@ class ViewTransactionScreen(Screen):
         app_user.delete_transaction_dict = data
         packet = build_packet(packet, user=f"{DataPath}/{app_user.username}")
         self.send_request(packet, "update")
-
 
 class ScheduleScreen(Screen):
     pass
@@ -682,7 +708,12 @@ class DayScreen(Screen):
         gl = self.ids["gl"]
         day_data = {}
         gl.clear_widgets()
+        print("\n\n")
+        print(app_user.schedule)
+        print("\n\n")
+        print(app_user.transactions)
         for value in zip(app_user.schedule["transaction_id"].keys(), app_user.schedule["transaction_id"].values(), app_user.schedule["scheduled_date"].values(), app_user.schedule["next_day"].values()):
+            print(value)
             if str(value[2]) == f"{year}-{month}-{day}" or str(value[-1]) == f"{year}-{month}-{day}":
                 day_data[value[1]] = [value[0]]
 
@@ -692,7 +723,7 @@ class DayScreen(Screen):
                 if index != "next_day":
                     day_data[i].append(row[v[0]])
 
-
+        print(day_data)
         for transaction_id in day_data:
             gl.add_widget(BubbleButton(text=str(transaction_id), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
             for value in day_data[transaction_id][2:]:
@@ -725,7 +756,7 @@ class WalletsScreen(Screen):
                 counter+=1
                 if counter == 3:
                     l.shorten = True
-                gl.add_widget(Label(text=str(value)))
+                gl.add_widget(l)
 
     
     def find_wallet(self, button):
@@ -789,9 +820,13 @@ class MMApp(App):
         self.sm.add_widget(AddWalletScreen(name="AddWalletScreen"))
         self.sm.add_widget(ViewWalletScreen(name="ViewWalletScreen"))
         self.sm.add_widget(AnalysisScreen(name="AnalysisScreen"))
-        self.sm.current =  "LoginScreen"
         global DataPath 
         DataPath = self.get_running_app().user_data_dir
+        if "user.db" not in os.listdir(DataPath):
+            self.sm.current = "RegistrationScreen"
+        else:
+            self.sm.current = "LoginScreen"
+
         return self.sm
 
 if __name__ ==  "__main__":
