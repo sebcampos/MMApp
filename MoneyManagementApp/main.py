@@ -146,6 +146,10 @@ class Screen(Screen):
             verify=False
         )
 
+        self.pb = ProgressBar()
+        self.pu = Popup(title="Loading...", content=self.pb, size_hint=(1, .5))
+        self.pu.open()
+
         
 
     def failed_request(self, req, response):
@@ -238,8 +242,6 @@ class Screen(Screen):
                             app_user.transactions[column][str(int(key) - 1)] = app_user.transactions[column].pop(key)
                 
                 #decrement transaction count
-                print(app_user.delete_transaction_dict["date"])
-                print(type(app_user.delete_transaction_dict["date"])) 
                 ## if date is before or euqal to transaction date ##
                 if datetime.datetime.strptime(app_user.delete_transaction_dict["date"], "%Y-%m-%d").date() <= datetime.datetime.now().date():
                     app_user.wallets["transaction_count"][wallet_index] -= 1
@@ -497,21 +499,16 @@ class Screen(Screen):
             days_in_month = (datetime.date(year, month + 1, 1) - datetime.date(year, month, 1)).days
         return days_in_month
 
-    def animation(self, req, start, end):
-        print(start, end)
-        if self.pb == None or self.pu == None:
-            self.pb = ProgressBar(value=start, max=end)
-            self.pu = Popup(title="Loading...", content=self.pb, size_hint=(.5, .5))
-            self.pu.open()
+    def animation(self, req, start, end):        
+        if self.pb == None:
             return
+        self.pb.value = (start / end) * 100
         
         if start == end:
+            print("end")
             self.pu.dismiss()
             self.pb = None
             self.pu = None
-            return
-
-        self.pb.value = start
         
                
 class RegistrationScreen(Screen):
@@ -542,7 +539,6 @@ class LoginScreen(Screen):
                 return
 
             app_user = User(row[0], row[3], row[1], row[2], row[4])
-            print(app_user)
             packet["userid"] = str(app_user.userid)
             packet = build_packet(packet, f"{DataPath}/{app_user.username}") 
             self.send_request(packet, "login")
@@ -708,12 +704,8 @@ class DayScreen(Screen):
         gl = self.ids["gl"]
         day_data = {}
         gl.clear_widgets()
-        print("\n\n")
-        print(app_user.schedule)
-        print("\n\n")
-        print(app_user.transactions)
+
         for value in zip(app_user.schedule["transaction_id"].keys(), app_user.schedule["transaction_id"].values(), app_user.schedule["scheduled_date"].values(), app_user.schedule["next_day"].values()):
-            print(value)
             if str(value[2]) == f"{year}-{month}-{day}" or str(value[-1]) == f"{year}-{month}-{day}":
                 day_data[value[1]] = [value[0]]
 
@@ -723,7 +715,6 @@ class DayScreen(Screen):
                 if index != "next_day":
                     day_data[i].append(row[v[0]])
 
-        print(day_data)
         for transaction_id in day_data:
             gl.add_widget(BubbleButton(text=str(transaction_id), background_normal="", background_color=(.4, .5, 100, .3), on_press=self.load_transaction))
             for value in day_data[transaction_id][2:]:
