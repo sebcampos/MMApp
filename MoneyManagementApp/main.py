@@ -149,11 +149,12 @@ class Screen(Screen):
         self.pb = ProgressBar()
         self.pu = Popup(title="Loading...", content=self.pb, size_hint=(1, .5))
         self.pu.open()
-
         
-
     def failed_request(self, req, response):
         print("failed")
+        self.pu.dismiss()
+        self.pb = None
+        self.pu = None
         self.prompt(f"{self.name}Error",response)
 
     def request_response(self, req, response):
@@ -301,6 +302,9 @@ class Screen(Screen):
     
     def request_error(self, req, error):
         print("error")
+        self.pu.dismiss()
+        self.pb = None
+        self.pu = None
         self.prompt(f"{self.name}Error",error)
         
     def prompt(self, error_type, error_message):
