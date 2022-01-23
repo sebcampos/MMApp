@@ -453,6 +453,9 @@ class Screen(Screen):
             day = str(button.text)
         if "Today " in day:
             day = day.replace("Today ", "")
+            if len(day) == 1:
+                day = "0"+day
+
         self.manager.get_screen("AddTransactionScreen").ids["calender"].text = f"{self.ids['year_label'].text}-{month}-{day}"
         for b in self.ids["gl_calender"].children:
             b.background_normal = ""
